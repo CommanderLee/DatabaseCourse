@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DBCourse_EXP1", "DBCourse_EXP1\DBCourse_EXP1.vcxproj", "{C0CB651C-8701-43FA-9279-DD406474CF24}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C0CB651C-8701-43FA-9279-DD406474CF24}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C0CB651C-8701-43FA-9279-DD406474CF24}.Debug|Win32.Build.0 = Debug|Win32
+		{C0CB651C-8701-43FA-9279-DD406474CF24}.Release|Win32.ActiveCfg = Release|Win32
+		{C0CB651C-8701-43FA-9279-DD406474CF24}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
