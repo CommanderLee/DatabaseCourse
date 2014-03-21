@@ -10,6 +10,7 @@ class SimSearcher
 {
 	/* q: parameter of q-gram algorithm */
 	unsigned	qGram;
+	unsigned	maxLength;
 
 	/* vector of empty ID and sorted gram list(vector) */
 	std::vector<unsigned>	emptyID;

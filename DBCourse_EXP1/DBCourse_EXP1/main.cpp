@@ -9,14 +9,15 @@ int main(int argc, char **argv)
 	vector<pair<unsigned, unsigned> > resultED;
 	vector<pair<unsigned, double> > resultJaccard;
 
-	unsigned q = 3, edThreshold = 2;
+	unsigned q = 2, edThreshold = 2;
 	double jaccardThreshold = 0.85;
 
 	searcher.createIndex("input.txt", q);
 	// searcher.createIndex(argv[1], q);
-	searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
-	searcher.searchED("query", edThreshold, resultED);
+	//searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
+	searcher.searchED("queryfffaaabbb", edThreshold, resultED);
 
+	system("pause");
 	return 0;
 }
 
