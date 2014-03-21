@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include <list>
+#include <algorithm>
 #include <unordered_map>
 
 using namespace std;
@@ -17,6 +17,11 @@ SimSearcher::~SimSearcher()
 {
 }
 
+bool gramCompare(const vector<unsigned> a, const vector<unsigned> b)
+{
+	return a.size() < b.size();
+}
+
 int SimSearcher::createIndex(const char *filename, unsigned q)
 {
 	ifstream fin(filename);
@@ -25,16 +30,17 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	/* Create invert-table: sortGram */
 	string str;
 	unsigned id(0);
-	unordered_map<string, vector<int>> originalGram;
+	unordered_map<string, vector<unsigned>> originalGram;
 	originalGram.clear();
 	for (;fin >> str; ++id)
 	{
-		int len = str.length();
+		unsigned len = str.length();
 		/* Too short: seems empty */
 		if (len < qGram)
 		{
 			emptyID.push_back(id);
 		}
+		/* Push back into original gram; sort later */
 		else
 		{
 			for (int i = 0; i <= len - qGram; ++i)
@@ -45,20 +51,38 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	}
 
 	/* Sort the originalGram by the length of the id list(vector) */
-
-	/* Check the invert-table: sortGram */
-	ofstream logout("log.txt");
-	for (unordered_map<string, vector<int>>::iterator it(originalGram.begin()); it != originalGram.end(); ++it)
+	for (unordered_map<string, vector<unsigned>>::iterator it(originalGram.begin()); it != originalGram.end(); ++it)
+	{
+		sortGram.push_back(it->second);
+	}
+	sort(sortGram.begin(), sortGram.end(), gramCompare);
+	
+	/* Check the original invert-table */
+/*	ofstream logout("log.txt");
+	for (unordered_map<string, vector<unsigned>>::iterator it(originalGram.begin()); it != originalGram.end(); ++it)
 	{
 		logout << it->first << ':';
-		vector<int> _vec = it->second;
-		for (vector<int>::iterator _it(_vec.begin()); _it != _vec.end(); ++_it)
+		vector<unsigned> _vec = it->second;
+		for (vector<unsigned>::iterator _it(_vec.begin()); _it != _vec.end(); ++_it)
 		{
 			logout << *_it << ',';
 		}
 		logout << endl;
 	}
 	logout.close();
+*/
+	/* Check the sorted invert-table */
+	ofstream logsout("log_sorted.txt");
+	for (vector<vector<unsigned>>::iterator it(sortGram.begin()); it != sortGram.end(); ++it)
+	{
+		vector<unsigned> _vec = *it;
+		for (vector<unsigned>::iterator _it(_vec.begin()); _it != _vec.end(); ++_it)
+		{
+			logsout << *_it << ',';
+		}
+		logsout << endl;
+	}
+	logsout.close();
 	
 	fin.close();
 	return SUCCESS;

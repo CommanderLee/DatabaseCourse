@@ -7,8 +7,12 @@ const int FAILURE = 1;
 
 class SimSearcher
 {
-	unsigned			qGram;
-	std::vector<int>	emptyID;
+	/* q: parameter of q-gram algorithm */
+	unsigned	qGram;
+
+	/* vector of empty ID and sorted gram list(vector) */
+	std::vector<unsigned>				emptyID;
+	std::vector<std::vector<unsigned>>	sortGram;
 public:
 	SimSearcher();
 	~SimSearcher();
