@@ -7,8 +7,8 @@ const int FAILURE = 1;
 
 class SimSearcher
 {
-	unsigned		qGram;
-	std::vector<int>		emptyID;
+	unsigned			qGram;
+	std::vector<int>	emptyID;
 public:
 	SimSearcher();
 	~SimSearcher();
