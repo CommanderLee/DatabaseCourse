@@ -17,9 +17,9 @@ SimSearcher::~SimSearcher()
 {
 }
 
-bool gramCompare(const vector<unsigned> a, const vector<unsigned> b)
+bool gramCompare(const pair<string, vector<unsigned>> a, const pair<string, vector<unsigned>> b)
 {
-	return a.size() < b.size();
+	return a.second.size() < b.second.size();
 }
 
 int SimSearcher::createIndex(const char *filename, unsigned q)
@@ -53,7 +53,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	/* Sort the originalGram by the length of the id list(vector) */
 	for (unordered_map<string, vector<unsigned>>::iterator it(originalGram.begin()); it != originalGram.end(); ++it)
 	{
-		sortGram.push_back(it->second);
+		sortGram.push_back(*it);
 	}
 	sort(sortGram.begin(), sortGram.end(), gramCompare);
 	
@@ -73,9 +73,9 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 */
 	/* Check the sorted invert-table */
 	ofstream logsout("log_sorted.txt");
-	for (vector<vector<unsigned>>::iterator it(sortGram.begin()); it != sortGram.end(); ++it)
+	for (vector<pair<string, vector<unsigned>>>::iterator it(sortGram.begin()); it != sortGram.end(); ++it)
 	{
-		vector<unsigned> _vec = *it;
+		vector<unsigned> _vec = it->second;
 		for (vector<unsigned>::iterator _it(_vec.begin()); _it != _vec.end(); ++_it)
 		{
 			logsout << *_it << ',';
@@ -83,7 +83,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 		logsout << endl;
 	}
 	logsout.close();
-	
+
 	fin.close();
 	return SUCCESS;
 }

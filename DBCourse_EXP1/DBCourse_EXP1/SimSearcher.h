@@ -11,8 +11,8 @@ class SimSearcher
 	unsigned	qGram;
 
 	/* vector of empty ID and sorted gram list(vector) */
-	std::vector<unsigned>				emptyID;
-	std::vector<std::vector<unsigned>>	sortGram;
+	std::vector<unsigned>	emptyID;
+	std::vector<std::pair<std::string, std::vector<unsigned>>>	sortGram;
 public:
 	SimSearcher();
 	~SimSearcher();
