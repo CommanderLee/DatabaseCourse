@@ -56,7 +56,15 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 		sortGram.push_back(*it);
 	}
 	sort(sortGram.begin(), sortGram.end(), gramCompare);
+	/* Link the gram(string) with the vector index(unsigned) with unordered_map */
+	unsigned len = sortGram.size();
+	for (unsigned i = 0; i < len; ++i)
+	{
+		existGram[sortGram[i].first] = i;
+	}
 	
+	
+
 	/* Check the original invert-table */
 /*	ofstream logout("log.txt");
 	for (unordered_map<string, vector<unsigned>>::iterator it(originalGram.begin()); it != originalGram.end(); ++it)
@@ -72,9 +80,10 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	logout.close();
 */
 	/* Check the sorted invert-table */
-	ofstream logsout("log_sorted.txt");
+/*	ofstream logsout("log_sorted.txt");
 	for (vector<pair<string, vector<unsigned>>>::iterator it(sortGram.begin()); it != sortGram.end(); ++it)
 	{
+		logsout << (it - sortGram.begin()) << ' ' << it->first << ':';
 		vector<unsigned> _vec = it->second;
 		for (vector<unsigned>::iterator _it(_vec.begin()); _it != _vec.end(); ++_it)
 		{
@@ -82,8 +91,12 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 		}
 		logsout << endl;
 	}
+*/	
+	/* Check the exist gram map */
+/*	logsout << existGram["swe"] << endl;
+	logsout << existGram["fff"] << endl;
 	logsout.close();
-
+*/
 	fin.close();
 	return SUCCESS;
 }

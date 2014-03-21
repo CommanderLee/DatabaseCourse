@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <utility>
+#include <unordered_map>
 
 const int SUCCESS = 0;
 const int FAILURE = 1;
@@ -13,6 +14,7 @@ class SimSearcher
 	/* vector of empty ID and sorted gram list(vector) */
 	std::vector<unsigned>	emptyID;
 	std::vector<std::pair<std::string, std::vector<unsigned>>>	sortGram;
+	std::unordered_map<std::string, unsigned>					existGram;
 public:
 	SimSearcher();
 	~SimSearcher();
