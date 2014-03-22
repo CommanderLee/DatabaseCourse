@@ -13,7 +13,8 @@ class SimSearcher
 	unsigned	maxLength;
 
 	/* vector of empty ID and sorted gram list(vector) */
-	std::vector<unsigned>	emptyID;
+	std::vector<unsigned>		emptyID;
+	std::vector<std::string>	wordList;
 	std::vector<std::pair<std::string, std::vector<unsigned>>>	sortGram;
 	std::unordered_map<std::string, unsigned>					existGram;
 public:

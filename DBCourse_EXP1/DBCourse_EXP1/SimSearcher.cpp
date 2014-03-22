@@ -35,6 +35,12 @@ struct heapCompare
 	}
 };
 
+// Sort the id in the result
+bool resultCompare(const pair<unsigned, unsigned> a, const pair<unsigned, unsigned> b)
+{
+	return a.first < b.first;
+}
+
 int SimSearcher::createIndex(const char *filename, unsigned q)
 {
 	ifstream fin(filename);
@@ -46,9 +52,9 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	unordered_map<string, vector<unsigned>> originalGram;
 	unordered_map<string, unsigned>			countGram;
 	originalGram.clear();
-	countGram.clear();
 	for (;fin >> str; ++id)
 	{
+		wordList.push_back(str);
 		unsigned len = str.length();
 		/* Too short: seems empty */
 		if (len < qGram)
@@ -58,6 +64,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 		/* Push back into original gram; sort later */
 		else
 		{
+			countGram.clear();
 			for (int i = 0; i <= len - qGram; ++i)
 			{
 				string gram(str.substr(i, qGram));
@@ -110,7 +117,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	logout.close();
 */
 	/* Check the sorted invert-table */
-	ofstream logsout("log_sorted.txt");
+/*	ofstream logsout("log_sorted.txt");
 	for (vector<pair<string, vector<unsigned>>>::iterator it(sortGram.begin()); it != sortGram.end(); ++it)
 	{
 		logsout << (it - sortGram.begin()) << ' ' << it->first << ':';
@@ -121,12 +128,8 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 		}
 		logsout << endl;
 	}
-	
-	/* Check the exist gram map */
-	logsout << existGram["swe"] << endl;
-	logsout << existGram["fff"] << endl;
 	logsout.close();
-
+*/
 	fin.close();
 	return SUCCESS;
 }
@@ -137,18 +140,28 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
 	return SUCCESS;
 }
 
+unsigned getED(const char *query, string word)
+{
+
+	return 0;
+}
+
 int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<unsigned, unsigned> > &result)
 {
 	result.clear();
 	/* T-occurrence threshold */
 	int T = strlen(query) - qGram + 1 - threshold * qGram;
-	const unsigned mu = 0.0085;
+	const double mu = 0.0085;
 
+	cout << "T = " << T << endl;
 
 	/* Using DivideSkip algorithm */
 	if (T > 0)
 	{
 		unsigned L = T / (mu * log(double(maxLength)) + 1);		// important parameter in the DivideSkip algorithm
+
+		cout << "L = " << L << endl;
+
 		vector<unsigned> possibleSet;							// store possible index in the sortGram.
 		string queryStr(query);
 		int len = queryStr.length();
@@ -180,8 +193,8 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 				vector<pair<unsigned, unsigned>> poppedLists;	// pair: <wordID, possible gram list ID>
 				unsigned topVal;
 				unsigned *startPos;
-				startPos = new unsigned [shortNum];				//start position of each possible gram list( mark down the index )
-				memset(startPos, 0, sizeof(startPos));
+				startPos = new unsigned [shortNum];				// start position of each possible gram list( mark down the index )
+				memset(startPos, 1, sizeof(startPos));
 				int cnt(0);
 				int th = T - L;
 				/* Initialize the heap */
@@ -206,16 +219,59 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 					if (cnt >= th)
 					{
 						shortResult.push_back(topVal);
-						// TODO:
-					} 
+						for (vector<pair<unsigned, unsigned>>::iterator it(poppedLists.begin()); it != poppedLists.end(); ++it)
+						{
+							if (startPos[it->second] < sortGram[possibleSet[it->second]].second.size())
+							{
+								heap.push(make_pair(sortGram[possibleSet[it->second]].second[startPos[it->second]], it->second));
+								++startPos[it->second];
+							}
+						}
+						
+					}
 					else
 					{
-						// TODO:
+						for (int i = 0; i < th - 1 - cnt; ++i)
+						{
+							poppedLists.push_back(heap.top());
+							heap.pop();
+						}
+						topVal = heap.top().first;
+						for (vector<pair<unsigned, unsigned>>::iterator it(poppedLists.begin()); it != poppedLists.end(); ++it)
+						{
+							vector<unsigned>::iterator findRes = lower_bound(sortGram[possibleSet[it->second]].second.begin(), \
+								sortGram[possibleSet[it->second]].second.end(), topVal);
+							if (findRes != sortGram[possibleSet[it->second]].second.end())
+							{
+								heap.push(make_pair(*findRes, it->second));
+							}
+							startPos[it->second] = findRes - sortGram[possibleSet[it->second]].second.begin() + 1;
+						}
 					}
-					
+				}
+				delete [] startPos;
+
+				/* MergeOpt & get real ED */
+				unsigned ed(0);
+				for (vector<unsigned>::iterator it(shortResult.begin()); it != shortResult.end(); ++it)
+				{
+					/* For each 'long' lists */
+					cnt = 0;
+					for (int i = shortNum; i < setNum; ++i)
+					{
+						if (binary_search(sortGram[possibleSet[i]].second.begin(), sortGram[possibleSet[i]].second.end(), *it))
+						{
+							++cnt;
+						}
+					}
+					ed = getED(query, wordList[*it]);
+					if (cnt >= L && ed <= threshold)
+					{
+						result.push_back(make_pair(*it, ed));
+					}
 				}
 
-				delete [] startPos;
+				sort(result.begin(), result.end(), resultCompare);
 			} 
 			else
 			{
