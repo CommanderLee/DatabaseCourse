@@ -227,13 +227,53 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
 	return SUCCESS;
 }
 
-unsigned getED(const char *query, const char *word, unsigned th)
+unsigned SimSearcher::getED(const char *query, const char *word, int th)
 {
 	int lenQ(strlen(query)), lenW(strlen(word));
 	int ed(0);
 	if (lenQ - lenW <= th)
 	{
-		ed = 0;
+		for (int q = 0; q < lenQ; ++q)
+		{
+			distance[q][0] = q;
+		}
+		for (int w = 0; w < lenW; ++w)
+		{
+			distance[0][w] = w;
+		}
+
+		int wSt, wEd, tmpMin;
+		for (int q = 1; q < lenQ; ++q)
+		{
+			wSt = max(1, q - th + 1);
+			wEd = min(lenW, q + th);
+			tmpMin = th + 1;
+			for (int w = wSt; w < wEd; ++w)
+			{
+				distance[q][w] = min(distance[q - 1][w - 1] + (query[q] != word[w]), min(distance[q - 1][w], distance[q][w - 1]) + 1);
+				if (distance[q][w] < tmpMin)
+				{
+					tmpMin = distance[q][w];
+				}
+			}
+			if (q - th >= 1 && q - th < lenW)
+			{
+				distance[q][q - th] = th;
+			}
+			if (q + th < lenW)
+			{
+				distance[q][q + th] = th;
+			}
+
+			// Break: no need to search any more
+			if (tmpMin > th)
+			{
+				ed = th + 1;
+				break;
+			}
+		}
+		
+		ed = distance[lenQ - 1][lenW - 1];
 	} 
 	else
 	{
