@@ -10,16 +10,17 @@ int main(int argc, char **argv)
 	vector<pair<unsigned, unsigned> > resultED;
 	vector<pair<unsigned, double> > resultJaccard;
 
-	unsigned q = 2, edThreshold = 50;
+	unsigned q = 2, edThreshold = 30;
 	double jaccardThreshold = 0.85;
 
-	searcher.createIndex("a.txt", q);
+	searcher.createIndex("c.txt", q);
 	// searcher.createIndex(argv[1], q);
-	//searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
-	searcher.searchED("abababcbcabcabcabcabcabcababababbbabbbaaabcbcabcbacbcbcbcbabcabcbab", edThreshold, resultED);
+	// searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
+	searcher.searchED("becdaaababdccceaccadbeddaaaadbaacdebabebcaeabbaaac", edThreshold, resultED);
+	// searcher.searchED(argv[3], atoi(argv[2]), resultED);
 	for (vector<pair<unsigned, unsigned> >::iterator it(resultED.begin()); it != resultED.end(); ++it)
 	{
-		cout << it->first << " , " << it->second << endl;
+		cout << "id : " << it->first << ' ' << "ED : " << it->second << endl;
 	}
 	
 

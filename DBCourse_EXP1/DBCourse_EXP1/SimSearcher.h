@@ -2,32 +2,42 @@
 #include <vector>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
+#include <queue>
 
 const int SUCCESS = 0;
 const int FAILURE = 1;
 
+using namespace std;
 //const int MAX_LEN = 30;
 
 class SimSearcher
 {
-	unsigned	qGram;			// q: parameter of q-gram algorithm
-	unsigned	maxLength;		// max length of the invert table
-	unsigned	shortestStrLen;	// shortest length of the string 
-
-	//int			distance[MAX_LEN][MAX_LEN];		// distance[query][word]
+	/* 'Permanent' variable */
+	unsigned						qGram;			// q: parameter of q-gram algorithm
+	unsigned						maxLength;		// max length of the invert table
+	unsigned						shortestStrLen;	// shortest length of the string 
 
 	/* vector of empty ID and sorted gram list(vector) */
-	std::vector<unsigned>		emptyID;
-	std::vector<std::string>	wordList;
+	vector<unsigned>				emptyID;
+	vector<string>	wordList;
 
-	std::vector<std::pair<std::string, std::vector<unsigned>>>	sortGram;
-	std::unordered_map<std::string, unsigned>					existGram;
+	unsigned						*startPos;		// start position 
 
-	void doMergeSkip(const char *query, unsigned th, std::vector<unsigned> &possibleSet, int shortNum, std::vector<unsigned> &shortResult);
-	void doMergeOpt(std::vector<unsigned> &shortResult, std::vector<unsigned> &possibleSet, unsigned st, unsigned ed, unsigned th, 
-std::vector<unsigned> &longResult);
+	vector<vector<unsigned>>		sortGramList;
+	unordered_map<string, unsigned>	gram2id;
 
-	//unsigned getED(const char *query, const char *word, int th);
+	/* 'Temporal' variable */
+	vector<unsigned>					possibleList;	// store possible index in the sortGram.
+	unordered_set<unsigned>				shortResult;	// candidate from the 'short' part (id)
+	unordered_set<unsigned>				longResult;		// candidate from the 'long' part (id)
+
+	vector<pair<unsigned, unsigned>>	poppedLists;	// pair: <wordID, sorted gram list ID>
+
+	void doMergeSkip(const char *query, unsigned th, int shortNum);
+	void doMergeOpt(unsigned start, unsigned end, unsigned th);
+
+	
 
 public:
 	SimSearcher();
