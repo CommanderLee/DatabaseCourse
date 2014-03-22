@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <queue>
+#include <cstring>
 
 using namespace std;
 
@@ -54,7 +55,8 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	unordered_map<string, vector<unsigned>> originalGram;
 	unordered_map<string, unsigned>			countGram;
 	originalGram.clear();
-	for (;fin >> str; ++id)
+
+	for (;getline(fin, str); ++id)
 	{
 		wordList.push_back(str);
 		unsigned len = str.length();
@@ -88,6 +90,7 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 			}
 		}
 	}
+	// shortestStrLen = wordList.
 
 	/* Sort the originalGram by the length of the id list(vector) */
 	for (unordered_map<string, vector<unsigned>>::iterator it(originalGram.begin()); it != originalGram.end(); ++it)
@@ -226,6 +229,9 @@ void SimSearcher::doMergeOpt(vector<unsigned> &shortResult, vector<unsigned> &po
 int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<unsigned, double> > &result)
 {
 	result.clear();
+
+
+
 	return SUCCESS;
 }
 
@@ -234,50 +240,80 @@ unsigned getED(const char *query, const char *word, int th)
 	static int distance[MAX_LEN][MAX_LEN];
 
 	int lenQ(strlen(query)), lenW(strlen(word));
+	// cout << "lenQ" << lenQ << endl << lenW << endl;
 	int ed(0);
-	if (lenQ - lenW <= th)
+	if (abs(lenQ - lenW) <= th)
 	{
-		for (int q = 0; q < lenQ; ++q)
+		for (int q = 0; q <= lenQ; ++q)
 		{
 			distance[q][0] = q;
 		}
-		for (int w = 0; w < lenW; ++w)
+		for (int w = 0; w <= lenW; ++w)
 		{
 			distance[0][w] = w;
 		}
 
 		int wSt, wEd, tmpMin;
-		for (int q = 1; q < lenQ; ++q)
+		for (int q = 1; q <= lenQ; ++q)
 		{
-			wSt = max(1, q - th + 1);
-			wEd = min(lenW, q + th);
+			wSt = 1; // max(1, q - th);
+			wEd = lenW; // min(lenW, q + th);
 			tmpMin = th + 1;
-			for (int w = wSt; w < wEd; ++w)
+			for (int w = wSt; w <= wEd; ++w)
 			{
-				distance[q][w] = min(distance[q - 1][w - 1] + (query[q] != word[w]), min(distance[q - 1][w], distance[q][w - 1]) + 1);
+				if (query[q - 1] == word[w - 1])
+				{
+					distance[q][w] = distance[q - 1][w - 1];
+				} 
+				else
+				{
+					distance[q][w] = distance[q - 1][w - 1] + 1;
+				}
+				
+				// distance[q][w] = distance[q - 1][w - 1] + (query[q - 1] != word[w - 1]?1:0);
+				if (/*abs(q - 1 - w) <= th && */distance[q][w] > distance[q - 1][w] + 1)
+				{
+					distance[q][w] = distance[q - 1][w] + 1;
+				}
+				if (/*abs(w - 1 - q) <= th && */distance[q][w] > distance[q][w - 1] + 1)
+				{
+					distance[q][w] = distance[q][w - 1] + 1;
+				}
+				
 				if (distance[q][w] < tmpMin)
 				{
 					tmpMin = distance[q][w];
 				}
 			}
-			if (q - th >= 1 && q - th < lenW)
-			{
-				distance[q][q - th] = th;
-			}
-			if (q + th < lenW)
-			{
-				distance[q][q + th] = th;
-			}
 
 			// Break: no need to search any more
-			if (tmpMin > th)
+			/*if (tmpMin > th)
 			{
 				ed = th + 1;
 				break;
-			}
+			}*/
 		}
-		
-		ed = distance[lenQ - 1][lenW - 1];
+		ed = distance[lenQ][lenW];
+
+/*		ofstream fout("a_debug.txt");
+		for (int i = 0; i <= lenQ; ++i)
+		{
+			for (int j = 0; j <= lenW; ++j)
+			{
+				if (distance[i][j] > th)
+				{
+					fout << "--" << " , ";
+				}
+				else
+				{
+					fout << distance[i][j] << " , ";
+				}
+				
+			}
+			fout << endl;
+		}
+		fout.close();
+*/
 	} 
 	else
 	{
@@ -294,14 +330,14 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 	int T = strlen(query) - qGram + 1 - threshold * qGram;
 	const double mu = 0.0085;
 
-	cout << "T = " << T << endl;
+	// cout << "T = " << T << endl;
 
 	/* Using DivideSkip algorithm */
 	if (T > 0)
 	{
 		unsigned L = T / (mu * log(double(maxLength)) + 1);		// important parameter in the DivideSkip algorithm
 
-		cout << "L = " << L << endl;
+		// cout << "L = " << L << endl;
 
 		vector<unsigned> possibleSet;							// store possible index in the sortGram.
 		string queryStr(query);
@@ -333,10 +369,12 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 
 				doMergeSkip(query, T - L, possibleSet, shortNum, shortResult);
 				
+				/* Use MergeOpt algorithm on L_long set. */
 				vector<unsigned> longResult;
 				
 				doMergeOpt(shortResult, possibleSet, shortNum, setNum, L, longResult);
 				
+				/* Check the candidates */
 				unsigned ed(0);
 				for (vector<unsigned>::iterator it(longResult.begin()); it != longResult.end(); ++it)
 				{
@@ -366,7 +404,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 	/* Just check it one by one */
 	else
 	{
-		cout << "T <= 0:" << endl;
+		// cout << "T <= 0:" << endl;
 		unsigned ed(0), wordLen(wordList.size());
 		for (int i = 0; i < wordLen; ++i)
 		{

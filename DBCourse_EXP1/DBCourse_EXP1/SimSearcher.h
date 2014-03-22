@@ -10,9 +10,9 @@ const int FAILURE = 1;
 
 class SimSearcher
 {
-	/* q: parameter of q-gram algorithm */
-	unsigned	qGram;
-	unsigned	maxLength;
+	unsigned	qGram;			// q: parameter of q-gram algorithm
+	unsigned	maxLength;		// max length of the invert table
+	unsigned	shortestStrLen;	// shortest length of the string 
 
 	//int			distance[MAX_LEN][MAX_LEN];		// distance[query][word]
 
