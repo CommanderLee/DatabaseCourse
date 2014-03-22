@@ -10,6 +10,8 @@
 
 using namespace std;
 
+const int MAX_LEN = 3000;
+
 SimSearcher::SimSearcher()
 {
 	qGram = 0;
@@ -227,8 +229,10 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
 	return SUCCESS;
 }
 
-unsigned SimSearcher::getED(const char *query, const char *word, int th)
+unsigned getED(const char *query, const char *word, int th)
 {
+	static int distance[MAX_LEN][MAX_LEN];
+
 	int lenQ(strlen(query)), lenW(strlen(word));
 	int ed(0);
 	if (lenQ - lenW <= th)
@@ -348,14 +352,30 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 		/* The query word is too short: ? */
 		else
 		{
-
+			unsigned ed(0), wordLen(wordList.size());
+			for (int i = 0; i < wordLen; ++i)
+			{
+				ed = getED(query, wordList[i].c_str(), threshold);
+				if (ed <= threshold)
+				{
+					result.push_back(make_pair(i, ed));
+				}
+			}
 		}
 	} 
 	/* Just check it one by one */
 	else
 	{
 		cout << "T <= 0:" << endl;
-
+		unsigned ed(0), wordLen(wordList.size());
+		for (int i = 0; i < wordLen; ++i)
+		{
+			ed = getED(query, wordList[i].c_str(), threshold);
+			if (ed <= threshold)
+			{
+				result.push_back(make_pair(i, ed));
+			}
+		}
 	}
 
 	return SUCCESS;

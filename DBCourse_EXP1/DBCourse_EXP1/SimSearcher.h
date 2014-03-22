@@ -6,7 +6,7 @@
 const int SUCCESS = 0;
 const int FAILURE = 1;
 
-const int MAX_LEN = 30;
+//const int MAX_LEN = 30;
 
 class SimSearcher
 {
@@ -14,7 +14,7 @@ class SimSearcher
 	unsigned	qGram;
 	unsigned	maxLength;
 
-	int			distance[MAX_LEN][MAX_LEN];		// distance[query][word]
+	//int			distance[MAX_LEN][MAX_LEN];		// distance[query][word]
 
 	/* vector of empty ID and sorted gram list(vector) */
 	std::vector<unsigned>		emptyID;
@@ -27,7 +27,7 @@ class SimSearcher
 	void doMergeOpt(std::vector<unsigned> &shortResult, std::vector<unsigned> &possibleSet, unsigned st, unsigned ed, unsigned th, 
 std::vector<unsigned> &longResult);
 
-	unsigned getED(const char *query, const char *word, int th);
+	//unsigned getED(const char *query, const char *word, int th);
 
 public:
 	SimSearcher();
