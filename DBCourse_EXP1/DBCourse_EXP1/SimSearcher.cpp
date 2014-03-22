@@ -134,16 +134,113 @@ int SimSearcher::createIndex(const char *filename, unsigned q)
 	return SUCCESS;
 }
 
+void SimSearcher::doMergeSkip(const char *query, unsigned th, vector<unsigned> &possibleSet, int shortNum, vector<unsigned> &shortResult)
+{
+	// pair: <wordID, possible gram list ID>
+	priority_queue<pair<unsigned, unsigned>, vector<pair<unsigned, unsigned>>, heapCompare> heap;
+	vector<pair<unsigned, unsigned>> poppedLists;	// pair: <wordID, possible gram list ID>
+
+	unsigned topVal;
+	unsigned *startPos;
+	startPos = new unsigned [shortNum];				// the next start position of each possible gram list( mark down the index )
+	memset(startPos, 1, sizeof(startPos));
+	int cnt(0);
+	/* Initialize the heap */
+	for (int i = 0; i < shortNum; ++i)
+	{
+		heap.push(make_pair(sortGram[possibleSet[i]].second.front(), i));
+	}
+	shortResult.clear();
+
+	/* MergeSkip */
+	while (!heap.empty())
+	{
+		topVal = heap.top().first;
+		cnt = 0;
+		poppedLists.clear();
+		while (!heap.empty() && heap.top().first == topVal)
+		{
+			++cnt;
+			poppedLists.push_back(heap.top());
+			heap.pop();
+		}
+		if (cnt >= th)
+		{
+			shortResult.push_back(topVal);
+			for (vector<pair<unsigned, unsigned>>::iterator it(poppedLists.begin()); it != poppedLists.end(); ++it)
+			{
+				if (startPos[it->second] < sortGram[possibleSet[it->second]].second.size())
+				{
+					heap.push(make_pair(sortGram[possibleSet[it->second]].second[startPos[it->second]], it->second));
+					++startPos[it->second];
+				}
+			}
+		}
+		else
+		{
+			for (int i = 0; i < th - 1 - cnt; ++i)
+			{
+				poppedLists.push_back(heap.top());
+				heap.pop();
+			}
+			topVal = heap.top().first;
+			for (vector<pair<unsigned, unsigned>>::iterator it(poppedLists.begin()); it != poppedLists.end(); ++it)
+			{
+				vector<unsigned>::iterator findRes = lower_bound(sortGram[possibleSet[it->second]].second.begin(), \
+					sortGram[possibleSet[it->second]].second.end(), topVal);
+				if (findRes != sortGram[possibleSet[it->second]].second.end())
+				{
+					heap.push(make_pair(*findRes, it->second));
+				}
+				startPos[it->second] = findRes - sortGram[possibleSet[it->second]].second.begin() + 1;
+			}
+		}
+	}
+	delete [] startPos;
+}
+
+void SimSearcher::doMergeOpt(vector<unsigned> &shortResult, vector<unsigned> &possibleSet, unsigned st, unsigned ed, unsigned th, vector<unsigned> &longResult)
+{
+	/* MergeOpt & get real ED */
+	unsigned cnt(0);
+	for (vector<unsigned>::iterator it(shortResult.begin()); it != shortResult.end(); ++it)
+	{
+		/* For each 'long' lists */
+		cnt = 0;
+		for (int i = st; i < ed; ++i)
+		{
+			if (binary_search(sortGram[possibleSet[i]].second.begin(), sortGram[possibleSet[i]].second.end(), *it))
+			{
+				++cnt;
+			}
+		}
+		if (cnt >= th)
+		{
+			longResult.push_back(*it);
+		}
+	}
+}
+
 int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<unsigned, double> > &result)
 {
 	result.clear();
 	return SUCCESS;
 }
 
-unsigned getED(const char *query, string word)
+unsigned getED(const char *query, const char *word, unsigned th)
 {
-
-	return 0;
+	int lenQ(strlen(query)), lenW(strlen(word));
+	int ed(0);
+	if (lenQ - lenW <= th)
+	{
+		ed = 0;
+	} 
+	else
+	{
+		ed = th + 1;
+	}
+	
+	return ed;
 }
 
 int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<unsigned, unsigned> > &result)
@@ -183,100 +280,30 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 
 			int setNum = possibleSet.size();
 			int shortNum = setNum - L;			
-			vector<unsigned> shortResult;		// candidate from the 'short' part
-
-			/* Use MergeSkip algorithm on L_short set, if not empty. */
+			
+			/* Use MergeSkip algorithm on L_short set, if not empty.
+			 * if shortNum <=0 means impossible */
 			if (shortNum > 0)
 			{
-				// pair: <wordID, possible gram list ID>
-				priority_queue<pair<unsigned, unsigned>, vector<pair<unsigned, unsigned>>, heapCompare> heap;
-				vector<pair<unsigned, unsigned>> poppedLists;	// pair: <wordID, possible gram list ID>
-				unsigned topVal;
-				unsigned *startPos;
-				startPos = new unsigned [shortNum];				// start position of each possible gram list( mark down the index )
-				memset(startPos, 1, sizeof(startPos));
-				int cnt(0);
-				int th = T - L;
-				/* Initialize the heap */
-				for (int i = 0; i < shortNum; ++i)
-				{
-					heap.push(make_pair(sortGram[possibleSet[i]].second.front(), i));
-				}
-				shortResult.clear();
-				
-				/* MergeSkip */
-				while (!heap.empty())
-				{
-					topVal = heap.top().first;
-					cnt = 0;
-					poppedLists.clear();
-					while (!heap.empty() && heap.top().first == topVal)
-					{
-						++cnt;
-						poppedLists.push_back(heap.top());
-						heap.pop();
-					}
-					if (cnt >= th)
-					{
-						shortResult.push_back(topVal);
-						for (vector<pair<unsigned, unsigned>>::iterator it(poppedLists.begin()); it != poppedLists.end(); ++it)
-						{
-							if (startPos[it->second] < sortGram[possibleSet[it->second]].second.size())
-							{
-								heap.push(make_pair(sortGram[possibleSet[it->second]].second[startPos[it->second]], it->second));
-								++startPos[it->second];
-							}
-						}
-						
-					}
-					else
-					{
-						for (int i = 0; i < th - 1 - cnt; ++i)
-						{
-							poppedLists.push_back(heap.top());
-							heap.pop();
-						}
-						topVal = heap.top().first;
-						for (vector<pair<unsigned, unsigned>>::iterator it(poppedLists.begin()); it != poppedLists.end(); ++it)
-						{
-							vector<unsigned>::iterator findRes = lower_bound(sortGram[possibleSet[it->second]].second.begin(), \
-								sortGram[possibleSet[it->second]].second.end(), topVal);
-							if (findRes != sortGram[possibleSet[it->second]].second.end())
-							{
-								heap.push(make_pair(*findRes, it->second));
-							}
-							startPos[it->second] = findRes - sortGram[possibleSet[it->second]].second.begin() + 1;
-						}
-					}
-				}
-				delete [] startPos;
+				vector<unsigned> shortResult;		// candidate from the 'short' part
 
-				/* MergeOpt & get real ED */
+				doMergeSkip(query, T - L, possibleSet, shortNum, shortResult);
+				
+				vector<unsigned> longResult;
+				
+				doMergeOpt(shortResult, possibleSet, shortNum, setNum, L, longResult);
+				
 				unsigned ed(0);
-				for (vector<unsigned>::iterator it(shortResult.begin()); it != shortResult.end(); ++it)
+				for (vector<unsigned>::iterator it(longResult.begin()); it != longResult.end(); ++it)
 				{
-					/* For each 'long' lists */
-					cnt = 0;
-					for (int i = shortNum; i < setNum; ++i)
-					{
-						if (binary_search(sortGram[possibleSet[i]].second.begin(), sortGram[possibleSet[i]].second.end(), *it))
-						{
-							++cnt;
-						}
-					}
-					ed = getED(query, wordList[*it]);
-					if (cnt >= L && ed <= threshold)
+					ed = getED(query, wordList[*it].c_str(), threshold);
+					if (ed <= threshold)
 					{
 						result.push_back(make_pair(*it, ed));
 					}
 				}
-
 				sort(result.begin(), result.end(), resultCompare);
 			} 
-			else
-			{
-			}
-			
 		}
 		/* The query word is too short: ? */
 		else

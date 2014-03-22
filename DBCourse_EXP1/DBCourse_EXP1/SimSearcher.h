@@ -17,6 +17,9 @@ class SimSearcher
 	std::vector<std::string>	wordList;
 	std::vector<std::pair<std::string, std::vector<unsigned>>>	sortGram;
 	std::unordered_map<std::string, unsigned>					existGram;
+
+	void doMergeSkip(const char *query, unsigned th, std::vector<unsigned> &possibleSet, int shortNum, std::vector<unsigned> &shortResult);
+	void doMergeOpt(std::vector<unsigned> &shortResult, std::vector<unsigned> &possibleSet, unsigned st, unsigned ed, unsigned th, std::vector<unsigned> &longResult);
 public:
 	SimSearcher();
 	~SimSearcher();
