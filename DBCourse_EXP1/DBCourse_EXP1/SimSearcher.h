@@ -22,22 +22,24 @@ class SimSearcher
 	vector<unsigned>				emptyID;
 	vector<string>	wordList;
 
-	unsigned						*startPos;		// start position 
-
 	vector<vector<unsigned>>		sortGramList;
 	unordered_map<string, unsigned>	gram2id;
 
 	/* 'Temporal' variable */
+	vector<unsigned>					startPos;		// start position of each list
+	unordered_map<string, unsigned>		countGram;		// handle repeated grams
 	vector<unsigned>					possibleList;	// store possible index in the sortGram.
+	vector<unsigned>					countID;		// countID[i]: appearance times of wordList[i]
 	unordered_set<unsigned>				shortResult;	// candidate from the 'short' part (id)
 	unordered_set<unsigned>				longResult;		// candidate from the 'long' part (id)
 
 	vector<pair<unsigned, unsigned>>	poppedLists;	// pair: <wordID, sorted gram list ID>
 
+	double getJac(const char *query, const char *word);
+	void doMakeGrams(const char *query);
 	void doMergeSkip(const char *query, unsigned th, int shortNum);
 	void doMergeOpt(unsigned start, unsigned end, unsigned th);
-
-	
+	// void bruteForceED(const char *query, unsigned threshold, std::vector<std::pair<unsigned, double> > &result);
 
 public:
 	SimSearcher();
