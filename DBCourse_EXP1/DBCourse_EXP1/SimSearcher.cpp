@@ -9,6 +9,8 @@
 #include <cmath>
 #include <queue>
 #include <cstring>
+#include <cstdlib>
+#include <cstdio>
 
 using namespace std;
 
@@ -488,11 +490,11 @@ unsigned getED(const char *query, const char *word, int th)
 			distance[0][w] = w;
 		}
 
-		int wSt, wEd, tmpMin;
+		int wSt, wEd, tmpMin(th + 1);
 		for (int q = 1; q <= lenQ; ++q)
 		{
-			wSt = 1; // max(1, q - th);
-			wEd = lenW; // min(lenW, q + th);
+			wSt = max(1, q - th);
+			wEd = min(lenW, q + th);
 			tmpMin = th + 1;
 			for (int w = wSt; w <= wEd; ++w)
 			{
@@ -507,13 +509,13 @@ unsigned getED(const char *query, const char *word, int th)
 				}
 				
 				// distance[q][w] = distance[q - 1][w - 1] + (query[q - 1] != word[w - 1]?1:0);
-				// if (abs(q - 1 - w) <= th && distance[q][w] > distance[q - 1][w] + 1)
-				if (distance[q][w] > distance[q - 1][w] + 1)
+				if (abs(q - 1 - w) <= th && distance[q][w] > distance[q - 1][w] + 1)
+				// if (distance[q][w] > distance[q - 1][w] + 1)
 				{
 					distance[q][w] = distance[q - 1][w] + 1;
 				}
-				// if (abs(w - 1 - q) <= th && distance[q][w] > distance[q][w - 1] + 1)
-				if (distance[q][w] > distance[q][w - 1] + 1)
+				if (abs(w - 1 - q) <= th && distance[q][w] > distance[q][w - 1] + 1)
+				// if (distance[q][w] > distance[q][w - 1] + 1)
 				{
 					distance[q][w] = distance[q][w - 1] + 1;
 				}
@@ -522,16 +524,24 @@ unsigned getED(const char *query, const char *word, int th)
 				{
 					tmpMin = distance[q][w];
 				}
-			}
 
+				// cout << q << ',' << w << ':' << distance[q][w] << ' ';
+			}
+			// cout << endl;
 			// Break: no need to search any more
-			/*if (tmpMin > th)
+			if (tmpMin > th)
 			{
-				ed = th + 1;
 				break;
-			}*/
+			}
 		}
-		ed = distance[lenQ][lenW];
+		if (tmpMin <= th)
+		{
+			ed = distance[lenQ][lenW];
+		}
+		else
+		{
+			ed = th + 1;
+		}
 		// cout << "ED : " << ed << endl;
 /*		ofstream fout("a_debug.txt");
 		for (int i = 0; i <= lenQ; ++i)
@@ -628,7 +638,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 				sort(result.begin(), result.end(), resultCompare);	
 
 				// check
-				/* ofstream logout("c_ed.txt");
+				/*ofstream logout("c_ed.txt");
 				cout << "Checking..." << endl;
 				unsigned wordLen(wordList.size()), j(0);
 				for (int i = 0; i < wordLen; ++i)

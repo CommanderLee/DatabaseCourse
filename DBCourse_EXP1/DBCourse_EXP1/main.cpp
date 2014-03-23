@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	vector<pair<unsigned, unsigned> > resultED;
 	vector<pair<unsigned, double> > resultJaccard;
 
-	unsigned q = 2, edThreshold = 14;
+	unsigned q = 2, edThreshold = 40;
 	double jaccardThreshold = 0.85;
 
 	ofstream fout("c.txt");
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 		for (int j = 0; j < 50; ++j)
 			sout << char('a' + rand() % 5);
 		qout << sout.str() << endl;
-		// cout << sout.str() << endl;
+		cout << sout.str() << endl;
 		searcher.searchED(sout.str().c_str(), edThreshold, resultED);
 	// }
 	
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 
 	
 	// searcher.createIndex(argv[1], q);
-	// searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
+	// 
 	// searcher.searchED(sout.str().c_str(), edThreshold, resultED);
 	// searcher.searchED("bbbbbabbbbbaabbbbaabaaaaabbaabababbabababaaaaaaabb", edThreshold, resultED);
 	// searcher.searchED(argv[3], atoi(argv[2]), resultED);
@@ -53,6 +53,8 @@ int main(int argc, char **argv)
 		cout << "id : " << it->first << ' ' << "ED : " << it->second << endl;
 	}
 	//searcher.searchED("bbbbbabbbbbaabbbbaabaaaaabbaabababbabababaaaaaaabb", edThreshold, resultED);
+
+	searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
 
 	system("pause");
 	return 0;
