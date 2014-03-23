@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 	vector<pair<unsigned, double> > resultJaccard;
 
 	unsigned q = 2, edThreshold = 40;
-	double jaccardThreshold = 0.85;
+	double jaccardThreshold = 0.45;
 
 	ofstream fout("c.txt");
 	ofstream qout("c_q.txt");
@@ -54,7 +54,11 @@ int main(int argc, char **argv)
 	}
 	//searcher.searchED("bbbbbabbbbbaabbbbaabaaaaabbaabababbabababaaaaaaabb", edThreshold, resultED);
 
-	searcher.searchJaccard("query", jaccardThreshold, resultJaccard);
+	searcher.searchJaccard(sout.str().c_str(), jaccardThreshold, resultJaccard);
+	for (vector<pair<unsigned, double> >::iterator it(resultJaccard.begin()); it != resultJaccard.end(); ++it)
+	{
+		cout << "id : " << it->first << ' ' << "Jaccard : " << it->second << endl;
+	}
 
 	system("pause");
 	return 0;

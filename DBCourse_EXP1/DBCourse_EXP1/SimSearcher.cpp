@@ -321,6 +321,7 @@ void SimSearcher::doMergeOpt(unsigned start, unsigned end, unsigned th)
 double SimSearcher::getJac(const char *query, const char *word)
 {
 	unordered_set<string> interSet;
+	int interNum(0);
 
 	countGram.clear();
 	/* Process same grams in one string */
@@ -345,7 +346,36 @@ double SimSearcher::getJac(const char *query, const char *word)
 			countGram[sout.str()] = 0;
 		}
 	}
-	return 0.0;
+
+	countGram.clear();
+	for (int j = 0; j <= lenW - qGram; ++j)
+	{
+		string gram(strW.substr(j, qGram));
+		/* Not found: first appearance */
+		if (countGram.find(gram) == countGram.end())
+		{
+			if (interSet.find(gram) != interSet.end())
+			{
+				++interNum;
+			}
+			countGram[gram] = 0;
+		}
+		/* Not first */
+		else
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			if (interSet.find(sout.str()) != interSet.end())
+			{
+				++interNum;
+			}
+			countGram[sout.str()] = 0;
+		}
+	}
+	
+	int Gq(max(0, int(lenQ - qGram + 1))), Gw(max(0, int(lenW - qGram + 1)));
+	return double(interNum) / (Gq + Gw - interNum);
 }
 
 int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<unsigned, double> > &result)
@@ -368,7 +398,7 @@ int SimSearcher::searchJaccard(const char *query, double threshold, vector<pair<
 		// cout << "L = " << L << endl;
 		int len = strlen(query);
 		/* Parse the grams if the query string is long enough */
-		if (len > qGram && len >= 100)
+		if (len > qGram && len >= 10)
 		{
 			doMakeGrams(query);
 
