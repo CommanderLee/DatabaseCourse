@@ -36,8 +36,9 @@ const int FAILURE = 1;
 
 class SimJoiner
 {
-	vector<string>							gramList1;
-	unordered_map<string, vector<unsigned>> invertList2;
+	vector<pair<unsigned, string>>			gramList1, gramList2;
+	unordered_map<string, vector<unsigned>> invertList2; //, prefInvertList2;
+	unordered_map<string, unsigned>			freqList2;
 	vector<string>							wordList2;
 	vector<unsigned>						shortList2;
 	unordered_set<unsigned>					possibleID;
@@ -48,9 +49,9 @@ public:
 	SimJoiner();
 	~SimJoiner();
 
-	void makeGramsforList1(string& str, unsigned q);
-
-	void makeInvertListsforList2(string& str, unsigned id, unsigned q);
+	void makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, string>>& gramList);
+	void makeFrequencyList2(string& str, unsigned q);
+	void makeInvertListsforList2(unsigned prefLen, unsigned prefNum, unsigned q);
 
 	// unsigned getED(string& str1, string& str2, unsigned threshold);
 

@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 
 	for (vector<EDJoinResult>::iterator it(resultED.begin()); it != resultED.end(); ++it)
 	{
-		cout << "id1: " << it->id1 << "id2: " << it->id2 << "ed: " << it->s << endl;
+		cout << "id1: " << it->id1 << " id2: " << it->id2 << " ed: " << it->s << endl;
 	}
 	
 	system("pause");
