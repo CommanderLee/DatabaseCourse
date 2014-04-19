@@ -123,13 +123,13 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 		wordList2.push_back(str2);
 		if (str2Len < prefLen)	// Too short, so mark them.
 		{
-			makeGrams(str2, id2, q, invertList2);
+			makeInvertListsforList2(str2, id2, q);
 			shortList2.push_back(id2);
 		} 
 		else
 		{
 			prefix2 = str2.substr(0, prefLen);
-			makeGrams(prefix2, id2, q, invertList2);
+			makeInvertListsforList2(prefix2, id2, q);
 		}
 	}
 	fin2.close();
@@ -141,27 +141,26 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	unsigned str1Len;
 	for (unsigned id1 = 0; getline(fin1, str1); ++id1)
 	{
-		invertList1.clear();	// Clear for every word
+		gramList1.clear();	// Clear for every word
 		possibleID.clear();
 
 		str1Len = str1.length();
 		if (str1Len < prefLen)	//	Too short
 		{
-			makeGrams(str1, id1, q, invertList1);
+			makeGramsforList1(str1, q);
 			possibleID.insert(shortList2.begin(), shortList2.end());
 		} 
 		else
 		{
 			prefix1 = str1.substr(0, prefLen);
-			makeGrams(prefix1, id1, q, invertList1);
+			makeGramsforList1(prefix1, q);
 		}
 		
 		/* Get possible List
-		 * Now process every gram in invertList2 */
-		for (unordered_map<string, vector<unsigned>>::iterator it(invertList1.begin()); it != invertList1.end(); ++it)
+		 * Now process every gram in gramList1 */
+		for (vector<string>::iterator it(gramList1.begin()); it != gramList1.end(); ++it)
 		{
-			string gram(it->first);
-			unordered_map<string, vector<unsigned>>::iterator findRes = invertList2.find(gram);
+			unordered_map<string, vector<unsigned>>::iterator findRes = invertList2.find(*it);
 			if (findRes != invertList2.end())		// Exist: possible
 			{
 				vector<unsigned>& idList = findRes->second;
@@ -196,7 +195,7 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	return SUCCESS;
 }
 
-void SimJoiner::makeGrams(string& str, unsigned id, unsigned q, unordered_map<string, vector<unsigned>>& invertList)
+void SimJoiner::makeInvertListsforList2(string& str, unsigned id, unsigned q)
 {
 	countGram.clear();
 	unsigned len(str.length()), num;
@@ -207,7 +206,7 @@ void SimJoiner::makeGrams(string& str, unsigned id, unsigned q, unordered_map<st
 
 		if (countGram.find(gram) == countGram.end())	// Not found
 		{
-			invertList[gram].push_back(id);
+			invertList2[gram].push_back(id);
 			countGram[gram] = 0;
 		} 
 		else											// Exist
@@ -215,9 +214,33 @@ void SimJoiner::makeGrams(string& str, unsigned id, unsigned q, unordered_map<st
 			num = countGram[gram]++;
 			ostringstream sout;
 			sout << gram << num;
-			invertList[sout.str()].push_back(id);
+			invertList2[sout.str()].push_back(id);
 			countGram[sout.str()] = 0;
 		}
 	}
 }
 
+void SimJoiner::makeGramsforList1(string& str, unsigned q)
+{
+	countGram.clear();
+	unsigned len(str.length()), num;
+	string gram;
+	for (int i = 0; i <= len - q; ++i)
+	{
+		gram = str.substr(i, q);
+
+		if (countGram.find(gram) == countGram.end())	// Not found
+		{
+			gramList1.push_back(gram);
+			countGram[gram] = 0;
+		} 
+		else											// Exist
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			gramList1.push_back(sout.str());
+			countGram[sout.str()] = 0;
+		}
+	}
+}
