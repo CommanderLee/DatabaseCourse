@@ -62,12 +62,10 @@ unsigned getED(string& str1, string& str2, unsigned threshold)
 				}
 
 				if (abs(i - 1 - j) <= th && distance[i][j] > distance[i - 1][j] + 1)
-				// if (distance[q][w] > distance[q - 1][w] + 1)
 				{
 					distance[i][j] = distance[i - 1][j] + 1;
 				}
 				if (abs(j - 1 - i) <= th && distance[i][j] > distance[i][j - 1] + 1)
-				// if (distance[q][w] > distance[q][w - 1] + 1)
 				{
 					distance[i][j] = distance[i][j - 1] + 1;
 				}
@@ -110,8 +108,6 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	/* Make list2's global invert-list ( frequency list )		*
 	 * For every word in filename2, make grams					*
 	 * So that the result will in good order of id1-id2			*/
-	// invertList2.clear();
-	// prefInvertList2.clear();
 	freqList2.clear();
 	wordList2.clear();
 	shortList2.clear();
@@ -125,14 +121,8 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 		wordList2.push_back(str2);
 		if (str2Len < prefLen)	// Too short, so mark them.
 		{
-			// makeInvertListsforList2(str2, id2, q);
 			shortList2.push_back(id2);
 		} 
-		else
-		{
-			// prefix2 = str2.substr(0, prefLen);
-			// makeInvertListsforList2(prefix2, id2, q);
-		}
 		makeFrequencyList2(str2, q);
 	}
 	fin2.close();
@@ -141,34 +131,26 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	invertList2.clear();
 	makeInvertListsforList2(prefLen, prefNum, q);
 
-	/* Find each word in list1
-	 * For every word, make grams, make candidates, then check */
+	/* Find each word in list1									*
+	 * For every word, make grams, make candidates, then check	*/
 	ifstream fin1(filename1);
 	string str1, prefix1;
 	unsigned str1Len, currPrefNum;
 	for (unsigned id1 = 0; getline(fin1, str1); ++id1)
 	{
-		gramList1.clear();	// Clear for every word
+		gramList1.clear();		// Clear for every word
 		possibleID.clear();
 
 		str1Len = str1.length();
 		if (str1Len < prefLen)	//	Too short
 		{
-			// makeGramsforList1(str1, q);
 			possibleID.insert(shortList2.begin(), shortList2.end());
 		} 
-		else
-		{
-			// prefix1 = str1.substr(0, prefLen);
-			// makeGramsforList1(prefix1, q);
-		}
 		makeGramsbyFreq(str1, q, gramList1);
 
-		/* Get possible List
-		 * Now process every gram in gramList1 */
-		// for (vector<string>::iterator it(gramList1.begin()); it != gramList1.end(); ++it)
+		/* Get possible List					*
+		 * Now process every gram in gramList1	*/
 		currPrefNum = min(prefNum, str1Len - q + 1);
-		// currPrefNum  = str1Len - q + 1;
 		for (unsigned gramNo(0); gramNo < currPrefNum; ++gramNo) 
 		{
 			unordered_map<string, vector<unsigned>>::iterator findRes = invertList2.find(gramList1[gramNo].second);
@@ -191,18 +173,15 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 		unsigned ed(0);
 		for (vector<unsigned>::iterator it(sortedPossibleID.begin()); it != sortedPossibleID.end(); ++it)
 		{
-			// cout << "possible" << *it << endl;
 			ed = getED(str1, wordList2[*it], threshold);
 			if (ed <= threshold)
 			{
-				// result.emplace_back(id1, *it, ed);
 				result.push_back(EDJoinResult(id1, *it, ed));
 			}
 		}
 	}
 	fin1.close();
 
-	// sort(result.begin(), result.end());
 	return SUCCESS;
 }
 
@@ -271,30 +250,6 @@ void SimJoiner::makeInvertListsforList2(unsigned prefLen, unsigned prefNum, unsi
 			}
 		}
 	}
-
-	/*
-	countGram.clear();
-	unsigned len(str.length()), num;
-	string gram;
-	for (int i = 0; i <= len - q; ++i)
-	{
-		gram = str.substr(i, q);
-
-		if (countGram.find(gram) == countGram.end())	// Not found
-		{
-			invertList2[gram].push_back(id);
-			countGram[gram] = 0;
-		} 
-		else											// Exist
-		{
-			num = countGram[gram]++;
-			ostringstream sout;
-			sout << gram << num;
-			invertList2[sout.str()].push_back(id);
-			countGram[sout.str()] = 0;
-		}
-	}
-	*/
 }
 
 void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, string>>& gramList)
@@ -308,7 +263,6 @@ void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, s
 
 		if (countGram.find(gram) == countGram.end())	// Appear at the 1st time
 		{
-			// gramList1.push_back(gram);
 			countGram[gram] = 0;
 		} 
 		else											// Appear before
@@ -316,15 +270,12 @@ void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, s
 			num = countGram[gram]++;
 			ostringstream sout;
 			sout << gram << num;
-			// gramList1.push_back(sout.str());
 			countGram[sout.str()] = 0;
 			gram = sout.str();
-
 		}
-		// unordered_map<string, vector<unsigned>>::iterator findRes = invertList2.find(gram);
-		unordered_map<string, unsigned>::iterator findRes = freqList2.find(gram);
-		// if (findRes != invertList2.end())				// Exist in the List2
-		if (findRes != freqList2.end())
+
+		unordered_map<string, unsigned>::iterator findRes = freqList2.find(gram);		
+		if (findRes != freqList2.end())			// Exist in the List2
 		{
 			gramList.push_back(make_pair(findRes->second, gram));
 		} 
