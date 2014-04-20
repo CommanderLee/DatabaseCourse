@@ -44,10 +44,13 @@ class SimJoiner
 	unordered_set<unsigned>					possibleID;
 	vector<unsigned>						sortedPossibleID;
 	unordered_map<string, unsigned>			countGram;		// count the number of each gram
+	unordered_set<string>					interSet;
 
 public:
 	SimJoiner();
 	~SimJoiner();
+
+	double getJac(string& str1, string& str2, unsigned q);
 
 	void makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, string>>& gramList);
 	void makeFrequencyList2(string& str, unsigned q);

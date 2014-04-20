@@ -23,8 +23,6 @@ int SimJoiner::joinJaccard(const char *filename1, const char *filename2, unsigne
 {
 	result.clear();
 
-	unsigned prefNum, prefLen;	// from VLDB08-EdJoin; Number of q-grams in the prefix
-
 	/* Make list2's global invert-list ( frequency list )		*
 	 * For every word in filename2, make grams					*
 	 * So that the result will in good order of id1-id2			*/
@@ -50,25 +48,28 @@ int SimJoiner::joinJaccard(const char *filename1, const char *filename2, unsigne
 	/* Generate List2's prefix invert list */
 	unsigned wordList2Len(wordList2.size());
 	invertList2.clear();
-	for (unsigned id2(0); id2 <= wordList2Len; ++id2)
+	unsigned prefNum, prefLen;	// from WWW08-PPJoin; Number of q-grams in the prefix
+	for (unsigned id2(0); id2 < wordList2Len; ++id2)
 	{
-
+		str2 = wordList2[id2];
+		str2Len = str2.length();
+		prefNum = (unsigned)( (1 - threshold) * max(0, int(str2Len) - int(q) + 1) + 1 );
+		prefLen = prefNum - 1 + q;
+		makeInvertListsforList2(str2, id2, prefLen, prefNum, q);
 	}
-	
-	// makeInvertListsforList2(prefLen, prefNum, q);
 
 	/* Find each word in list1									*
 	 * For every word, make grams, make candidates, then check	*/
 	ifstream fin1(filename1);
 	string str1;
-	unsigned str1Len, currPrefNum;
+	unsigned str1Len;
 	for (unsigned id1 = 0; getline(fin1, str1); ++id1)
 	{
 		gramList1.clear();		// Clear for every word
 		possibleID.clear();
 
 		str1Len = str1.length();
-		if (str1Len < prefLen)	//	Too short
+		if (str1Len < q)		//	Too short
 		{
 			possibleID.insert(shortList2.begin(), shortList2.end());
 		} 
@@ -76,8 +77,9 @@ int SimJoiner::joinJaccard(const char *filename1, const char *filename2, unsigne
 
 		/* Get possible List					*
 		 * Now process every gram in gramList1	*/
-		currPrefNum = min(prefNum, str1Len - q + 1);
-		for (unsigned gramNo(0); gramNo < currPrefNum; ++gramNo) 
+		prefNum = (unsigned)( (1 - threshold) * max(0, int(str1Len) - int(q) + 1) + 1 );
+		prefLen = prefNum - 1 + q;
+		for (unsigned gramNo(0); gramNo < prefNum; ++gramNo) 
 		{
 			unordered_map<string, vector<unsigned>>::iterator findRes = invertList2.find(gramList1[gramNo].second);
 			if (findRes != invertList2.end())		// Exist: possible when using prefix-filter
@@ -96,19 +98,78 @@ int SimJoiner::joinJaccard(const char *filename1, const char *filename2, unsigne
 		sort(sortedPossibleID.begin(), sortedPossibleID.end());
 		
 		/* Check each ID in sortedPossibleID */
-		unsigned ed(0);
+		double jac(0.0);
 		for (vector<unsigned>::iterator it(sortedPossibleID.begin()); it != sortedPossibleID.end(); ++it)
 		{
-			// ed = getED(str1, wordList2[*it], threshold);
-			if (ed <= threshold)
+			jac = getJac(str1, wordList2[*it], q);
+			if (jac >= threshold)
 			{
-				// result.push_back(EDJoinResult(id1, *it, ed));
+				result.push_back(JaccardJoinResult(id1, *it, jac));
 			}
 		}
 	}
 	fin1.close();
 
 	return SUCCESS;
+}
+
+double SimJoiner::getJac(string& str1, string& str2, unsigned q)
+{
+	countGram.clear();
+	interSet.clear();
+	int interNum(0);
+
+	/* Process same grams in one string */
+	unsigned num, str1Len(str1.length()), str2Len(str2.length());
+	for (int i = 0; i <= str1Len - q; ++i)
+	{
+		string gram(str1.substr(i, q));
+		/* Not found: first appearance */
+		if (countGram.find(gram) == countGram.end())
+		{
+			interSet.insert(gram);
+			countGram[gram] = 0;
+		}
+		/* Not first */
+		else
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			interSet.insert(sout.str());
+			countGram[sout.str()] = 0;
+		}
+	}
+
+	countGram.clear();
+	for (int j = 0; j <= str2Len - q; ++j)
+	{
+		string gram(str2.substr(j, q));
+		/* Not found: first appearance */
+		if (countGram.find(gram) == countGram.end())
+		{
+			if (interSet.find(gram) != interSet.end())
+			{
+				++interNum;
+			}
+			countGram[gram] = 0;
+		}
+		/* Not first */
+		else
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			if (interSet.find(sout.str()) != interSet.end())
+			{
+				++interNum;
+			}
+			countGram[sout.str()] = 0;
+		}
+	}
+
+	int gramNum1(max(0, (int)str1Len - int(q) + 1)), gramNum2(max(0, int(str2Len) - int(q) + 1));
+	return double(interNum) / (gramNum1 + gramNum2 - interNum);
 }
 
 unsigned getED(string& str1, string& str2, unsigned threshold)
