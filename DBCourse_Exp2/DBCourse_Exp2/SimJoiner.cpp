@@ -190,24 +190,31 @@ void SimJoiner::makeFrequencyList2(string& str, unsigned q)
 	countGram.clear();
 	unsigned len(str.length()), num;
 	string gram;
-	for (int i = 0; i <= len - q; ++i)
-	{
-		gram = str.substr(i, q);
-
-		if (countGram.find(gram) == countGram.end())	// Not found
+	//if (len >= q)
+	//{
+		for (int i = 0; i <= len - q; ++i)
 		{
-			freqList2[gram]++;
-			countGram[gram] = 0;
-		} 
-		else											// Exist
-		{
-			num = countGram[gram]++;
-			ostringstream sout;
-			sout << gram << num;
-			freqList2[sout.str()]++;
-			countGram[sout.str()] = 0;
+			gram = str.substr(i, q);
+	
+			if (countGram.find(gram) == countGram.end())	// Not found
+			{
+				freqList2[gram]++;
+				countGram[gram] = 0;
+			} 
+			else											// Exist
+			{
+				num = countGram[gram]++;
+				ostringstream sout;
+				sout << gram << num;
+				freqList2[sout.str()]++;
+				countGram[sout.str()] = 0;
+			}
 		}
-	}
+	//} 
+	//else
+	//{
+	//	freqList2[str]++;
+	//}
 }
 
 void SimJoiner::makeInvertListsforList2(unsigned prefLen, unsigned prefNum, unsigned q)
@@ -221,24 +228,32 @@ void SimJoiner::makeInvertListsforList2(unsigned prefLen, unsigned prefNum, unsi
 			countGram.clear();
 			unsigned len(str2.length()), num;
 			string gram;
-			for (int i = 0; i <= len - q; ++i)
-			{
-				gram = str2.substr(i, q);
-	
-				if (countGram.find(gram) == countGram.end())	// Not found
+			//if (len >= q)
+			//{
+				for (int i = 0; i <= len - q; ++i)
 				{
-					invertList2[gram].push_back(id2);
-					countGram[gram] = 0;
-				} 
-				else											// Exist
-				{
-					num = countGram[gram]++;
-					ostringstream sout;
-					sout << gram << num;
-					invertList2[sout.str()].push_back(id2);
-					countGram[sout.str()] = 0;
+					gram = str2.substr(i, q);
+		
+					if (countGram.find(gram) == countGram.end())	// Not found
+					{
+						invertList2[gram].push_back(id2);
+						countGram[gram] = 0;
+					} 
+					else											// Exist
+					{
+						num = countGram[gram]++;
+						ostringstream sout;
+						sout << gram << num;
+						invertList2[sout.str()].push_back(id2);
+						countGram[sout.str()] = 0;
+					}
 				}
-			}
+			//} 
+			//else
+			//{
+			//	invertList2[str2].push_back(id2);
+			//}
+
 		} 
 		else							// Long enough: get lowest frequency prefix
 		{	
@@ -257,32 +272,48 @@ void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, s
 	countGram.clear();
 	unsigned len(str.length()), num;
 	string gram;
-	for (int i = 0; i <= len - q; ++i)
-	{
-		gram = str.substr(i, q);
-
-		if (countGram.find(gram) == countGram.end())	// Appear at the 1st time
+	//if (len >= q)
+	//{
+		for (int i = 0; i <= len - q; ++i)
 		{
-			countGram[gram] = 0;
-		} 
-		else											// Appear before
-		{
-			num = countGram[gram]++;
-			ostringstream sout;
-			sout << gram << num;
-			countGram[sout.str()] = 0;
-			gram = sout.str();
+			gram = str.substr(i, q);
+	
+			if (countGram.find(gram) == countGram.end())	// Appear at the 1st time
+			{
+				countGram[gram] = 0;
+			} 
+			else											// Appear before
+			{
+				num = countGram[gram]++;
+				ostringstream sout;
+				sout << gram << num;
+				countGram[sout.str()] = 0;
+				gram = sout.str();
+			}
+	
+			unordered_map<string, unsigned>::iterator findRes = freqList2.find(gram);		
+			if (findRes != freqList2.end())			// Exist in the List2
+			{
+				gramList.push_back(make_pair(findRes->second, gram));
+			} 
+			else
+			{
+				gramList.push_back(make_pair(0, gram));
+			}
 		}
+	//} 
+	//else
+	//{
+	//	unordered_map<string, unsigned>::iterator findRes = freqList2.find(str);		
+	//	if (findRes != freqList2.end())			// Exist in the List2
+	//	{
+	//		gramList.push_back(make_pair(findRes->second, str));
+	//	} 
+	//	else
+	//	{
+	//		gramList.push_back(make_pair(0, str));
+	//	}
+	//}
 
-		unordered_map<string, unsigned>::iterator findRes = freqList2.find(gram);		
-		if (findRes != freqList2.end())			// Exist in the List2
-		{
-			gramList.push_back(make_pair(findRes->second, gram));
-		} 
-		else
-		{
-			gramList.push_back(make_pair(0, gram));
-		}
-	}
-	stable_sort(gramList.begin(), gramList.end());
+	sort(gramList.begin(), gramList.end());
 }
