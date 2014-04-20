@@ -37,6 +37,7 @@ const int FAILURE = 1;
 class SimJoiner
 {
 	vector<pair<unsigned, string>>			gramList1, gramList2;
+	unordered_map<string, unsigned>			gramPos;
 	unordered_map<string, vector<unsigned>> invertList2;
 	unordered_map<string, unsigned>			freqList2;
 	vector<string>							wordList2;
@@ -51,6 +52,9 @@ public:
 	~SimJoiner();
 
 	double getJac(string& str1, string& str2, unsigned q);
+
+	unsigned minEditErrors(vector<pair<unsigned, string>>& gramList, unsigned mid, unsigned q);	
+	unsigned getShorterPrefix(vector<pair<unsigned, string>>& gramList, unsigned q, unsigned threshold);
 
 	void makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, string>>& gramList);
 	void makeFrequencyList2(string& str, unsigned q);

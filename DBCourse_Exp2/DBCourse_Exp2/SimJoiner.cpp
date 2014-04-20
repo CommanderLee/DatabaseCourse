@@ -55,6 +55,9 @@ int SimJoiner::joinJaccard(const char *filename1, const char *filename2, unsigne
 		str2Len = str2.length();
 		prefNum = (unsigned)( (1 - threshold) * max(0, int(str2Len) - int(q) + 1) + 1 );
 		prefLen = prefNum - 1 + q;
+
+		gramList2.clear();
+		makeGramsbyFreq(str2, q, gramList2);
 		makeInvertListsforList2(str2, id2, prefLen, prefNum, q);
 	}
 
@@ -275,12 +278,22 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	fin2.close();
 	
 	/* Generate List2's prefix invert list */
-	unsigned wordList2Len(wordList2.size());
+	unsigned wordList2Len(wordList2.size()), shortPref;
 	invertList2.clear();
-
 	for (unsigned id2(0); id2 < wordList2Len; ++id2)
 	{
-		makeInvertListsforList2(wordList2[id2], id2, prefLen, prefNum, q);
+		gramList2.clear();
+		makeGramsbyFreq(wordList2[id2], q, gramList2);
+
+		if (wordList2[id2].length() >= prefLen)
+		{
+			shortPref = getShorterPrefix(gramList2, q, threshold);
+			makeInvertListsforList2(wordList2[id2], id2, shortPref + q - 1, shortPref, q);
+		}
+		else
+		{
+			makeInvertListsforList2(wordList2[id2], id2, prefLen, prefNum, q); 
+		}
 	}
 
 	/* Find each word in list1									*
@@ -302,7 +315,15 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 
 		/* Get possible List					*
 		 * Now process every gram in gramList1	*/
-		currPrefNum = min(prefNum, str1Len - q + 1);
+		if (str1Len >= prefLen)
+		{
+			currPrefNum = getShorterPrefix(gramList1, q, threshold);
+		} 
+		else
+		{
+			currPrefNum = str1Len - q + 1;
+		}
+		// currPrefNum = min(shortPref, str1Len - q + 1);
 		for (unsigned gramNo(0); gramNo < currPrefNum; ++gramNo) 
 		{
 			unordered_map<string, vector<unsigned>>::iterator findRes = invertList2.find(gramList1[gramNo].second);
@@ -405,8 +426,8 @@ void SimJoiner::makeInvertListsforList2(string& str, unsigned id, unsigned prefL
 	} 
 	else							// Long enough: get lowest frequency prefix
 	{	
-		gramList2.clear();
-		makeGramsbyFreq(str, q, gramList2);
+		//gramList2.clear();
+		//makeGramsbyFreq(str, q, gramList2);
 		for (int g(0); g < prefNum; ++g)
 		{
 			invertList2[gramList2[g].second].push_back(id);
@@ -417,6 +438,7 @@ void SimJoiner::makeInvertListsforList2(string& str, unsigned id, unsigned prefL
 void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, string>>& gramList)
 {
 	countGram.clear();
+	gramPos.clear();
 	unsigned len(str.length()), num;
 	string gram;
 	//if (len >= q)
@@ -438,6 +460,7 @@ void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, s
 				gram = sout.str();
 			}
 	
+			gramPos[gram] = i;
 			unordered_map<string, unsigned>::iterator findRes = freqList2.find(gram);		
 			if (findRes != freqList2.end())			// Exist in the List2
 			{
@@ -463,4 +486,46 @@ void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, s
 	//}
 
 	sort(gramList.begin(), gramList.end());
+}
+
+unsigned SimJoiner::minEditErrors(vector<pair<unsigned, string>>& gramList, unsigned mid, unsigned q)
+{
+	vector<pair<unsigned, string>> newVec;
+	newVec.resize(mid);
+	for (unsigned i = 0; i < mid; ++i)
+	{
+		// it->first = gramPos[it->second];
+		newVec[i] = make_pair(gramPos[gramList[i].second], gramList[i].second);
+	}
+	sort(newVec.begin(), newVec.end());
+
+	unsigned pos(0), cnt(0), newVecLen(newVec.size());
+	for (unsigned i = 0; i < newVecLen; ++i)
+	{
+		if (newVec[i].first > pos)
+		{
+			++cnt;
+			pos = newVec[i].first + q - 1;
+		}
+	}
+	return cnt;
+}
+
+unsigned SimJoiner::getShorterPrefix(vector<pair<unsigned, string>>& gramList, unsigned q, unsigned threshold)
+{
+	unsigned left(threshold), right(q * threshold), mid;
+	while (left < right)		// Get shorter pref num: 'left'
+	{
+		mid = (left + right) >> 1;
+		// vector<pair<unsigned, string>> newTmpVector(gramList.begin(), gramList.begin() + mid + 1);
+		if (minEditErrors(gramList, mid, q) <= threshold)
+		{
+			left = mid + 1;
+		} 
+		else
+		{
+			right = mid;
+		}
+	}
+	return left;
 }
