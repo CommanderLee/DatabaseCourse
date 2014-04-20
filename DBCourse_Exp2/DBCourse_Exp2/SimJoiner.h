@@ -51,7 +51,7 @@ public:
 
 	void makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, string>>& gramList);
 	void makeFrequencyList2(string& str, unsigned q);
-	void makeInvertListsforList2(unsigned prefLen, unsigned prefNum, unsigned q);
+	void makeInvertListsforList2(string& str, unsigned id, unsigned prefLen, unsigned prefNum, unsigned q);
 
 	int joinJaccard(const char *filename1, const char *filename2, unsigned q, double threshold, std::vector<JaccardJoinResult> &result);
 	int joinED(const char *filename1, const char *filename2, unsigned q, unsigned threshold, std::vector<EDJoinResult> &result);
