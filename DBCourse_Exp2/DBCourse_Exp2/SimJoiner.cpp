@@ -113,7 +113,7 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	shortList2.clear();
 
 	ifstream fin2(filename2);
-	string str2, prefix2;
+	string str2;
 	unsigned str2Len;
 	for (unsigned id2 = 0; getline(fin2, str2); ++id2)
 	{
@@ -134,7 +134,7 @@ int SimJoiner::joinED(const char *filename1, const char *filename2, unsigned q, 
 	/* Find each word in list1									*
 	 * For every word, make grams, make candidates, then check	*/
 	ifstream fin1(filename1);
-	string str1, prefix1;
+	string str1;
 	unsigned str1Len, currPrefNum;
 	for (unsigned id1 = 0; getline(fin1, str1); ++id1)
 	{
@@ -192,24 +192,24 @@ void SimJoiner::makeFrequencyList2(string& str, unsigned q)
 	string gram;
 	//if (len >= q)
 	//{
-		for (int i = 0; i <= len - q; ++i)
+	for (int i = 0; i <= len - q; ++i)
+	{
+		gram = str.substr(i, q);
+
+		if (countGram.find(gram) == countGram.end())	// Not found
 		{
-			gram = str.substr(i, q);
-	
-			if (countGram.find(gram) == countGram.end())	// Not found
-			{
-				freqList2[gram]++;
-				countGram[gram] = 0;
-			} 
-			else											// Exist
-			{
-				num = countGram[gram]++;
-				ostringstream sout;
-				sout << gram << num;
-				freqList2[sout.str()]++;
-				countGram[sout.str()] = 0;
-			}
+			freqList2[gram]++;
+			countGram[gram] = 0;
+		} 
+		else											// Exist
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			freqList2[sout.str()]++;
+			countGram[sout.str()] = 0;
 		}
+	}
 	//} 
 	//else
 	//{
