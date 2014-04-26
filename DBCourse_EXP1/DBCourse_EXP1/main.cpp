@@ -16,9 +16,9 @@ int main(int argc, char **argv)
 	unsigned q = 2, edThreshold = 40;
 	double jaccardThreshold = 0.45;
 
-	ofstream fout("c.txt");
+/*	ofstream fout("c.txt");
 	ofstream qout("c_q.txt");
-
+	
 	srand(time(NULL));
 	for (int i = 0; i < 200; ++i)
 	{
@@ -26,9 +26,9 @@ int main(int argc, char **argv)
 			fout << char('a' + rand() % 5);
 		fout << endl;
 	}
-
+	*/
 	searcher.createIndex("c.txt", q);
-
+	/*
 	// while(1)
 	// {
 		ostringstream sout;
@@ -41,12 +41,12 @@ int main(int argc, char **argv)
 	
 	fout.close();
 	qout.close();
-
+	*/
 	
 	// searcher.createIndex(argv[1], q);
 	// 
 	// searcher.searchED(sout.str().c_str(), edThreshold, resultED);
-	// searcher.searchED("bbbbbabbbbbaabbbbaabaaaaabbaabababbabababaaaaaaabb", edThreshold, resultED);
+	searcher.searchED("dbceacedbdbceecddcdbabbeddcabcbbcaedebebbcededaade", edThreshold, resultED);
 	// searcher.searchED(argv[3], atoi(argv[2]), resultED);
 	for (vector<pair<unsigned, unsigned> >::iterator it(resultED.begin()); it != resultED.end(); ++it)
 	{
@@ -54,10 +54,11 @@ int main(int argc, char **argv)
 	}
 	//searcher.searchED("bbbbbabbbbbaabbbbaabaaaaabbaabababbabababaaaaaaabb", edThreshold, resultED);
 
-	searcher.searchJaccard(sout.str().c_str(), jaccardThreshold, resultJaccard);
+	searcher.searchJaccard("dbceacedbdbceecddcdbabbeddcabcbbcaedebebbcededaade", jaccardThreshold, resultJaccard);
+	ofstream jout("c_jac.txt");
 	for (vector<pair<unsigned, double> >::iterator it(resultJaccard.begin()); it != resultJaccard.end(); ++it)
 	{
-		cout << "id : " << it->first << ' ' << "Jaccard : " << it->second << endl;
+		jout << "id : " << it->first << ' ' << "Jaccard : " << it->second << endl;
 	}
 
 	system("pause");

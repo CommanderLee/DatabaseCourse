@@ -365,7 +365,7 @@ void SimJoiner::makeFrequencyList2(string& str, unsigned q)
 	string gram;
 	//if (len >= q)
 	//{
-	for (int i = 0; i <= len - q; ++i)
+	for (int i = 0; i + q <= len; ++i)
 	{
 		gram = str.substr(i, q);
 
@@ -399,7 +399,7 @@ void SimJoiner::makeInvertListsforList2(string& str, unsigned id, unsigned prefL
 		string gram;
 		//if (len >= q)
 		//{
-			for (int i = 0; i <= len - q; ++i)
+			for (int i = 0; i + q <= len; ++i)
 			{
 				gram = str.substr(i, q);
 		
@@ -443,7 +443,7 @@ void SimJoiner::makeGramsbyFreq(string& str, unsigned q, vector<pair<unsigned, s
 	string gram;
 	//if (len >= q)
 	//{
-		for (int i = 0; i <= len - q; ++i)
+		for (int i = 0; i + q <= len; ++i)
 		{
 			gram = str.substr(i, q);
 	

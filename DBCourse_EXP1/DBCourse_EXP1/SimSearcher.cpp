@@ -633,7 +633,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 		// cout << "; L = " << L << endl;
 		int len = strlen(query);
 		/* Parse the grams if the query string is long enough */
-		if (len > qGram && len >= 10)
+		if (len > qGram && len >= 5)
 		{
 			doMakeGrams(query);
 
@@ -655,6 +655,7 @@ int SimSearcher::searchED(const char *query, unsigned threshold, vector<pair<uns
 					if (ed <= threshold)
 					{
 						result.push_back(make_pair(*it, ed));
+						//result.emplace_back(*it, ed);
 					}
 				}
 				for (vector<unsigned>::iterator it(emptyID.begin()); it != emptyID.end(); ++it)
