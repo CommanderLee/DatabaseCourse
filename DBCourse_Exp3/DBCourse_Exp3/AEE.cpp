@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -30,6 +31,23 @@ inline int len2gram(int len, int q)
 	return len + 1 - q;
 }
 
+bool resultEDCmp(const EDExtractResult& res1, const EDExtractResult& res2)
+{
+	bool jug(0);
+	if (res1.id != res2.id)
+	{
+		jug = res1.id < res2.id;
+	}
+	else if (res1.pos != res2.pos)
+	{
+		jug = res1.pos < res2.pos;
+	}
+	else if (res1.len != res2.len)
+	{
+		jug = res1.len < res2.len;
+	}
+	return jug;
+}
 //string AEE::checkRepeatedGram(const string& gram)
 //{
 //	/* Process same grams in one string */
@@ -56,16 +74,89 @@ inline int len2gram(int len, int q)
 //	return ret;
 //}
 
-void AEE::getCandidateWindows(int eID, int Tl, int TUpper)
+int getED(string& str1, string& str2, unsigned threshold)
+{
+	int len1(str1.length()), len2(str2.length());
+	int ed(0), th(threshold);
+
+	static int distance[MAX_LEN][MAX_LEN];
+
+	if (abs(len1 - len2) <= th)
+	{
+		for (int i = 0; i <= len1; ++i)
+		{
+			distance[i][0] = i;
+		}
+		for (int j = 0; j <= len2; ++j)
+		{
+			distance[0][j] = j;
+		}
+
+		int st2, ed2, tmpMin(th + 1);
+		for (int i = 1; i <= len1; ++i)
+		{
+			st2 = max(1, i - th);
+			ed2 = min(len2, i + th);
+			tmpMin = th + 1;
+			for (int j = st2; j <= ed2; ++j)
+			{
+				/** query[q - 1] is the q_th char of query */
+				if (str1[i - 1] == str2[j - 1])
+				{
+					distance[i][j] = distance[i - 1][j - 1];
+				} 
+				else
+				{
+					distance[i][j] = distance[i - 1][j - 1] + 1;
+				}
+
+				if (abs(i - 1 - j) <= th && distance[i][j] > distance[i - 1][j] + 1)
+				{
+					distance[i][j] = distance[i - 1][j] + 1;
+				}
+				if (abs(j - 1 - i) <= th && distance[i][j] > distance[i][j - 1] + 1)
+				{
+					distance[i][j] = distance[i][j - 1] + 1;
+				}
+
+				if (distance[i][j] < tmpMin)
+				{
+					tmpMin = distance[i][j];
+				}
+			}
+			/** Break: no need to search any more */
+			if (tmpMin > th)
+			{
+				break;
+			}
+		}
+		if (tmpMin <= th)
+		{
+			ed = distance[len1][len2];
+		}
+		else
+		{
+			ed = th + 1;
+		}
+	} 
+	else
+	{
+		ed = th + 1;
+	}
+
+	return ed;
+}
+
+void AEE::getCandidateWindows(int eID, int Tl, int TUpper, int TLower)
 {
 	vector<int> &PList = entityPosList[eID];
 	int endPos(PList.size() - Tl + 1), j;
-	for (int i = 0; i <= endPos;)
+	for (int i = 0; i < endPos;)
 	{
 		j = i + Tl - 1;
 		if (PList[j] - PList[i] + 1 <= TUpper)
 		{
-			binarySpan(i, j, eID, TUpper);
+			binarySpan(i, j, eID, TUpper, TLower);
 			++i;
 		}
 		else
@@ -76,10 +167,10 @@ void AEE::getCandidateWindows(int eID, int Tl, int TUpper)
 	
 }
 
-void AEE::binarySpan(int st, int ed, int eID, int TUpper)
+void AEE::binarySpan(int st, int ed, int eID, int TUpper, int TLower)
 {
 	vector<int> &PList = entityPosList[eID];
-	int lower(ed), upper(st + TUpper - 1), mid;
+	int lower(ed), upper(min(st + TUpper - 1, (int)PList.size() - 1)), mid;
 	while (lower <= upper)
 	{
 		mid = (upper + lower) / 2;
@@ -98,7 +189,48 @@ void AEE::binarySpan(int st, int ed, int eID, int TUpper)
 		}
 	}
 	mid = upper;
+
 	/** Find Candidate Windows in D[st...mid] */
+	int left, right;
+	for (; mid > st; --mid)
+	{
+		left = max(PList[mid] - TUpper + 1, 0);
+		if (st > 0)
+		{
+			left = max(left, PList[st - 1] + 1);
+		}
+		right = min(PList[st] + TUpper - 1, docGramMax - 1);
+		if (mid + 1 < PList.size())
+		{
+			right = min(right, PList[mid + 1] - 1);
+		}
+	
+		/** Find candidates */
+		int sGram, sLen, ED;
+		string sub;
+		for (int l = left; l <= PList[st]; ++l)
+		{
+			for (int r = PList[mid]; r <= right; ++r)
+			{
+				sGram = r - l + 1;
+				sLen = gram2len(sGram, qGram);
+				if (sGram >= TLower && sGram <= TUpper)
+				{
+					sub = docStr.substr(l, sLen);
+					ED = getED(entityList[eID], sub, thED);
+					if ( ED <= thED)
+					{
+						EDExtractResult res;
+						res.id = eID;
+						res.pos = l;
+						res.len = sLen;
+						res.sim = ED;
+						pResED->push_back(res);
+					}
+				}
+			}
+		}
+	}
 }
 
 int AEE::binaryShift(int st, int ed, int eID, int Tl, int TUpper)
@@ -123,7 +255,7 @@ int AEE::binaryShift(int st, int ed, int eID, int Tl, int TUpper)
 		}
 	}
 	st = lower;
-	ed = st + Tl - 1;
+	ed = min(st + Tl - 1, (int)PList.size() - 1);
 	if (PList[ed] - PList[st] + 1 > TUpper)
 	{
 		st = binaryShift(st, ed, eID, Tl, TUpper);
@@ -138,7 +270,8 @@ int AEE::createIndex(const char *filename, unsigned q)
 	ifstream fin(filename);
 	qGram = q;
 	string str, gram;
-	unsigned len, ELenMax(-1), ELenMin(MAX_LEN);
+	int len, ELenMax(-1), ELenMin(MAX_LEN);
+	entityList.clear();
 	entityInvertList.clear();
 
 	/** For each entity, create q-gram, inverted list */
@@ -148,11 +281,11 @@ int AEE::createIndex(const char *filename, unsigned q)
 		len = str.length();
 		if (len > ELenMax)
 		{
-			EGramMax = len;
+			ELenMax = len;
 		}
-		else if (len < ELenMin)
+		if (len < ELenMin)
 		{
-			EGramMin = len;
+			ELenMin = len;
 		}
 		
 		//existGram.clear();
@@ -172,31 +305,24 @@ int AEE::createIndex(const char *filename, unsigned q)
 	EGramMax = len2gram(ELenMax, q);
 	EGramMin = len2gram(ELenMin, q);
 
-	entityPosList.resize(entityList.size());
-
 	return SUCCESS;
 }
 
 int AEE::aeeJaccard(const char *doc, double threshold, vector<JaccardExtractResult> &result)
 {
-	result.clear();
-	
-	/** Convert threshold(jac-delta) to T; calculate SGramMax/MinJac */
-
-	/** Filter: find candidate */
-
-	/** Verify: calculate Jaccard */
-
-	return SUCCESS;
-}
-
-int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &result)
-{
 	/** Preparing */
 	result.clear();
-	string docStr(doc), gram;
+	entityPosList.clear();
+	entityPosList.resize(entityList.size());
+
+	docStr = string(doc);
 	int len = docStr.length();
 	docInvertList.clear();
+	docGramMax = len2gram(len, qGram);
+	thJac = threshold;
+
+	pResJac = &result;
+	string gram;
 
 	/** Faerie Algorithm:
 	  * Create inverted list of Doc;
@@ -205,10 +331,10 @@ int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &res
 	{
 		//gram = checkRepeatedGram(str.substr(i, qGram));
 		gram = docStr.substr(i, qGram);
-		if (docInvertList[gram].empty() || docInvertList[gram].back() != i)
-		{
+		//if (docInvertList[gram].empty() || docInvertList[gram].back() != i)
+		//{
 			docInvertList[gram].push_back(i);
-		}
+		//}
 
 		if (entityInvertList.find(gram) != entityInvertList.end())
 		{
@@ -222,7 +348,77 @@ int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &res
 
 	/** Check each entity's P List with candidate window algorithm */
 	int eNo(entityPosList.size());
-	int Tl, TUpper, eGram;							
+	int Tl, TUpper, TLower, eGram;							
+	for (int id = 0; id < eNo; ++id)
+	{
+		if (!entityPosList[id].empty())
+		{
+			eGram = len2gram(entityList[id].length(), qGram);
+			Tl = int(eGram * threshold);
+			if (eGram * thED - Tl > 1e-6)
+			{
+				++Tl;
+			}
+			
+			TUpper = eGram * threshold;
+			TLower = eGram - threshold;
+			if (entityPosList[id].size() >= Tl)
+			{
+				getCandidateWindows(id, Tl, TUpper, TLower);
+			}
+			
+		}
+		
+	}
+	
+	sort(result.begin(), result.end(), resultEDCmp);
+	//cout << "DEBUG:" << endl;
+	//cout << getED(entityList[0], docStr.substr(15, 15), qGram) << endl;
+	return SUCCESS;
+}
+
+
+int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &result)
+{
+	/** Preparing */
+	result.clear();
+	entityPosList.clear();
+	entityPosList.resize(entityList.size());
+
+	docStr = string(doc);
+	int len = docStr.length();
+	docInvertList.clear();
+	docGramMax = len2gram(len, qGram);
+	thED = threshold;
+
+	pResED = &result;
+	string gram;
+
+	/** Faerie Algorithm:
+	  * Create inverted list of Doc;
+	  * Generate Position List. */
+	for (int i = 0; i + qGram <= len; ++i)
+	{
+		//gram = checkRepeatedGram(str.substr(i, qGram));
+		gram = docStr.substr(i, qGram);
+		//if (docInvertList[gram].empty() || docInvertList[gram].back() != i)
+		//{
+			docInvertList[gram].push_back(i);
+		//}
+
+		if (entityInvertList.find(gram) != entityInvertList.end())
+		{
+			vector<int> &IL = entityInvertList[gram];
+			for (vector<int>::iterator it(IL.begin()); it != IL.end(); ++it)
+			{
+				entityPosList[*it].push_back(i);
+			}
+		}
+	}
+
+	/** Check each entity's P List with candidate window algorithm */
+	int eNo(entityPosList.size());
+	int Tl, TUpper, TLower, eGram;							
 	for (int id = 0; id < eNo; ++id)
 	{
 		if (!entityPosList[id].empty())
@@ -230,17 +426,18 @@ int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &res
 			eGram = len2gram(entityList[id].length(), qGram);
 			Tl = eGram - threshold * qGram;
 			TUpper = eGram + threshold;
+			TLower = eGram - threshold;
 			if (entityPosList[id].size() >= Tl)
 			{
-				getCandidateWindows(id, Tl, TUpper);
+				getCandidateWindows(id, Tl, TUpper, TLower);
 			}
 			
 		}
 		
 	}
 	
-
-	/** Verify: calculate ED */
-
+	sort(result.begin(), result.end(), resultEDCmp);
+	//cout << "DEBUG:" << endl;
+	//cout << getED(entityList[0], docStr.substr(15, 15), qGram) << endl;
 	return SUCCESS;
 }

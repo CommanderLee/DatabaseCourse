@@ -16,6 +16,25 @@ struct ExtractResult
 	_PosType pos;
 	_LenType len;
 	_SimType sim;
+/*
+	bool operator < (const ExtractResult& res2)
+	{
+		bool jug(0);
+		if (id != res2.id)
+		{
+			jug = id < res2.id;
+		}
+		else if (pos != res2.pos)
+		{
+			jug = pos < res2.pos;
+		}
+		else if (len != res2.len)
+		{
+			jug = len < res2.len;
+		}
+		return jug;
+	}
+	*/
 };
 
 typedef ExtractResult<unsigned, unsigned, unsigned, unsigned> EDExtractResult;
@@ -35,15 +54,21 @@ class AEE {
 	vector<vector<int>>					entityPosList;
 
 	/** About Docs */
+	string								docStr;
 	unordered_map<string, vector<int>>	docInvertList;
+	int									docGramMax;
+	unsigned							thED;
+	double								thJac;
 
+	vector<EDExtractResult>				*pResED;
+	vector<JaccardExtractResult>		*pResJac;
 	/** 'Temporal' Variables */
 	//unordered_set<string, int>		existGram;		// handle repeated grams
 
 	/** Help Functions */
 	//string checkRepeatedGram(const string& str);
-	void getCandidateWindows(int eID, int Tl, int TUpper);
-	void binarySpan(int st, int ed, int eID, int TUpper);
+	void getCandidateWindows(int eID, int Tl, int TUpper, int TLower);
+	void binarySpan(int st, int ed, int eID, int TUpper, int TLower);
 	int binaryShift(int st, int ed, int eID, int Tl, int TUpper);
 public:
 	AEE();
