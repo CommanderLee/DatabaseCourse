@@ -35,7 +35,8 @@ int main(int argc, char **argv)
 	
 	aee.createIndex("small_aee_entity", q);
 	aee.aeeED("it is declarativewlodzimierz drabenticlp", edThreshold, resultED);
-
+	//aee.createIndex("test.txt", q);
+	//aee.aeeED("abcde21312352543264565463abcde", edThreshold, resultED);
 	for (vector<EDExtractResult>::iterator it = resultED.begin(); it != resultED.end(); ++it)
 	{
 		cout << it->id << ' ' << it->pos << ' ' << it->len <<  " Sim:" << it->sim << endl;

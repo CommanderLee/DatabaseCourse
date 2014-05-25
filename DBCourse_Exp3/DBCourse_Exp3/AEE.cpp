@@ -534,16 +534,14 @@ int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &res
 		if (!entityPosList[id].empty())
 		{
 			eGram = len2gram(entityList[id].length(), qGram);
-			Tl = eGram - threshold * qGram;
+			Tl = max(1, eGram - int(threshold * qGram));
 			TUpper = eGram + threshold;
 			TLower = eGram - threshold;
 			if (entityPosList[id].size() >= Tl)
 			{
 				getCandidateWindows(id, Tl, TUpper, TLower);
 			}
-			
 		}
-		
 	}
 	
 	sort(result.begin(), result.end(), resultEDCmp);
