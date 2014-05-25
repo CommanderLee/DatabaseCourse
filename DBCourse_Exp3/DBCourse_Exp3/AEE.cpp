@@ -48,6 +48,24 @@ bool resultEDCmp(const EDExtractResult& res1, const EDExtractResult& res2)
 	}
 	return jug;
 }
+
+bool resultJacCmp(const JaccardExtractResult& res1, const JaccardExtractResult& res2)
+{
+	bool jug(0);
+	if (res1.id != res2.id)
+	{
+		jug = res1.id < res2.id;
+	}
+	else if (res1.pos != res2.pos)
+	{
+		jug = res1.pos < res2.pos;
+	}
+	else if (res1.len != res2.len)
+	{
+		jug = res1.len < res2.len;
+	}
+	return jug;
+}
 //string AEE::checkRepeatedGram(const string& gram)
 //{
 //	/* Process same grams in one string */
@@ -147,6 +165,71 @@ int getED(string& str1, string& str2, unsigned threshold)
 	return ed;
 }
 
+int AEE::getIntersetNum(string& str1, string& str2)
+{
+	countGram.clear();
+	interSet.clear();
+	int interNum(0);
+
+	/* Process same grams in one string */
+	int num, str1Len(str1.length()), str2Len(str2.length());
+	for (int i = 0; i + qGram <= str1Len; ++i)
+	{
+		string gram(str1.substr(i, qGram));
+		/* Not found: first appearance */
+		if (countGram.find(gram) == countGram.end())
+		{
+			interSet.insert(gram);
+			countGram[gram] = 0;
+		}
+		/* Not first */
+		else
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			interSet.insert(sout.str());
+			countGram[sout.str()] = 0;
+		}
+	}
+
+	countGram.clear();
+	for (int j = 0; j + qGram <= str2Len; ++j)
+	{
+		string gram(str2.substr(j, qGram));
+		/* Not found: first appearance */
+		if (countGram.find(gram) == countGram.end())
+		{
+			if (interSet.find(gram) != interSet.end())
+			{
+				++interNum;
+			}
+			countGram[gram] = 0;
+		}
+		/* Not first */
+		else
+		{
+			num = countGram[gram]++;
+			ostringstream sout;
+			sout << gram << num;
+			if (interSet.find(sout.str()) != interSet.end())
+			{
+				++interNum;
+			}
+			countGram[sout.str()] = 0;
+		}
+	}
+	return interNum;
+}
+//
+//double AEE::getJac(string& str1, string& str2)
+//{
+//	int interNum = getIntersetNum(str1, str2);
+//	int gramNum1(max(0, len2gram(str1.length(), qGram)));
+//	int gramNum2(max(0, len2gram(str2.length(), qGram)));
+//	return double(interNum) / (gramNum1 + gramNum2 - interNum);
+//}
+
 void AEE::getCandidateWindows(int eID, int Tl, int TUpper, int TLower)
 {
 	vector<int> &PList = entityPosList[eID];
@@ -206,7 +289,9 @@ void AEE::binarySpan(int st, int ed, int eID, int TUpper, int TLower)
 		}
 	
 		/** Find candidates */
-		int sGram, sLen, ED;
+		int sGram, sLen, eGram(len2gram(entityList[eID].length(), qGram));
+		int ED, interNum, T;
+		double Jac;
 		string sub;
 		for (int l = left; l <= PList[st]; ++l)
 		{
@@ -217,15 +302,36 @@ void AEE::binarySpan(int st, int ed, int eID, int TUpper, int TLower)
 				if (sGram >= TLower && sGram <= TUpper)
 				{
 					sub = docStr.substr(l, sLen);
-					ED = getED(entityList[eID], sub, thED);
-					if ( ED <= thED)
+					if (category == CAT_ED)
 					{
-						EDExtractResult res;
-						res.id = eID;
-						res.pos = l;
-						res.len = sLen;
-						res.sim = ED;
-						pResED->push_back(res);
+						ED = getED(entityList[eID], sub, thED);
+						if ( ED <= thED)
+						{
+							EDExtractResult res;
+							res.id = eID;
+							res.pos = l;
+							res.len = sLen;
+							res.sim = ED;
+							pResED->push_back(res);
+						}
+					}
+					else if (category == CAT_JAC)
+					{
+						interNum = getIntersetNum(entityList[eID], sub);
+						T = int((sGram + eGram) * thJac / (1 + thJac));
+						if (interNum >= T)
+						{
+							Jac = double(interNum) / (sGram + eGram - interNum);
+							if (Jac >= thJac)
+							{
+								JaccardExtractResult res;
+								res.id = eID;
+								res.pos = l;
+								res.len = sLen;
+								res.sim = Jac;
+								pResJac->push_back(res);
+							}
+						}
 					}
 				}
 			}
@@ -311,6 +417,7 @@ int AEE::createIndex(const char *filename, unsigned q)
 int AEE::aeeJaccard(const char *doc, double threshold, vector<JaccardExtractResult> &result)
 {
 	/** Preparing */
+	category = CAT_JAC;
 	result.clear();
 	entityPosList.clear();
 	entityPosList.resize(entityList.size());
@@ -354,24 +461,22 @@ int AEE::aeeJaccard(const char *doc, double threshold, vector<JaccardExtractResu
 		if (!entityPosList[id].empty())
 		{
 			eGram = len2gram(entityList[id].length(), qGram);
-			Tl = int(eGram * threshold);
-			if (eGram * thED - Tl > 1e-6)
+			Tl = int(eGram * thJac);
+			if (eGram * thJac - Tl > 1e-6)
 			{
 				++Tl;
 			}
 			
-			TUpper = eGram * threshold;
-			TLower = eGram - threshold;
+			TUpper = int(eGram / thJac);
+			TLower = Tl;
 			if (entityPosList[id].size() >= Tl)
 			{
 				getCandidateWindows(id, Tl, TUpper, TLower);
 			}
-			
 		}
-		
 	}
 	
-	sort(result.begin(), result.end(), resultEDCmp);
+	sort(result.begin(), result.end(), resultJacCmp);
 	//cout << "DEBUG:" << endl;
 	//cout << getED(entityList[0], docStr.substr(15, 15), qGram) << endl;
 	return SUCCESS;
@@ -381,6 +486,7 @@ int AEE::aeeJaccard(const char *doc, double threshold, vector<JaccardExtractResu
 int AEE::aeeED(const char *doc, unsigned threshold, vector<EDExtractResult> &result)
 {
 	/** Preparing */
+	category = CAT_ED;
 	result.clear();
 	entityPosList.clear();
 	entityPosList.resize(entityList.size());

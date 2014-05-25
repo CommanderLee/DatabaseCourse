@@ -43,6 +43,9 @@ typedef ExtractResult<unsigned, unsigned, unsigned, double> JaccardExtractResult
 const int SUCCESS = 0;
 const int FAILURE = 1;
 
+const int CAT_ED = 2;
+const int CAT_JAC = CAT_ED + 1;
+
 class AEE {
 	/** Parameter */
 	unsigned							qGram;
@@ -59,17 +62,23 @@ class AEE {
 	int									docGramMax;
 	unsigned							thED;
 	double								thJac;
+	int									category;
 
 	vector<EDExtractResult>				*pResED;
 	vector<JaccardExtractResult>		*pResJac;
+
 	/** 'Temporal' Variables */
-	//unordered_set<string, int>		existGram;		// handle repeated grams
+	unordered_map<string, int>			countGram;		// count the number of each gram
+	unordered_set<string>				interSet;
 
 	/** Help Functions */
 	//string checkRepeatedGram(const string& str);
 	void getCandidateWindows(int eID, int Tl, int TUpper, int TLower);
 	void binarySpan(int st, int ed, int eID, int TUpper, int TLower);
 	int binaryShift(int st, int ed, int eID, int Tl, int TUpper);
+
+	//double getJac(string& str1, string& str2);
+	int getIntersetNum(string& str1, string& str2);
 public:
 	AEE();
 	~AEE();
