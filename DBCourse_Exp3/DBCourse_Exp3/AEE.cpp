@@ -304,15 +304,19 @@ void AEE::binarySpan(int st, int ed, int eID, int TUpper, int TLower)
 					sub = docStr.substr(l, sLen);
 					if (category == CAT_ED)
 					{
-						ED = getED(entityList[eID], sub, thED);
-						if ( ED <= thED)
+						T = max(sGram, eGram) - thED * qGram;
+						if (mid - st + 1 >= T)
 						{
-							EDExtractResult res;
-							res.id = eID;
-							res.pos = l;
-							res.len = sLen;
-							res.sim = ED;
-							pResED->push_back(res);
+							ED = getED(entityList[eID], sub, thED);
+							if ( ED <= thED)
+							{
+								EDExtractResult res;
+								res.id = eID;
+								res.pos = l;
+								res.len = sLen;
+								res.sim = ED;
+								pResED->push_back(res);
+							}
 						}
 					}
 					else if (category == CAT_JAC)

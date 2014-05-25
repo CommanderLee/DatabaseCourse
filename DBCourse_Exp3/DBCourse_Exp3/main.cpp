@@ -41,6 +41,15 @@ int main(int argc, char **argv)
 		cout << it->id << ' ' << it->pos << ' ' << it->len <<  " Sim:" << it->sim << endl;
 	}
 	
+	cout << "-----------------------" << endl;
+
+	aee.aeeJaccard("it is declarativewlodzimierz drabenticlp", jaccardThreshold, resultJaccard);
+
+	for (vector<JaccardExtractResult>::iterator it = resultJaccard.begin(); it != resultJaccard.end(); ++it)
+	{
+		cout << it->id << ' ' << it->pos << ' ' << it->len <<  " Sim:" << it->sim << endl;
+	}
+
 	system("pause");
 	return 0;
 }
