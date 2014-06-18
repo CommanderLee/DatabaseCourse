@@ -1,27 +1,49 @@
 <!DOCTYPE html>
 <html>
     <head>
-		<title>Tutor Search Engine</title> 
-		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-		<style type="text/css">
-		  html { height: 100% }
-		  body { height: 100%; margin: 0; padding: 0 }
-		  #map_canvas { height: 100% }
-		</style>
-		<script type="text/javascript"
-		  src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBwkYuTlbR08tmUUqZkpAfLrZmtyTQrwnY&sensor=FALSE">
-		</script>
-		<script type="text/javascript">
-		  function initialize() {
-			var mapOptions = {
-			  center: new google.maps.LatLng(-34.397, 150.644),
-			  zoom: 8,
-			  mapTypeId: google.maps.MapTypeId.ROADMAP
-			};
-			var map = new google.maps.Map(document.getElementById("map_canvas"),
-				mapOptions);
-		  }
-		</script>
+        <title>Tutor Search Engine</title> 
+        <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+        <style type="text/css">
+            html { height: 100% }
+            body { height: 100%; margin: 0; padding: 0 }
+            #map_canvas { height: 100% }
+        </style>
+        <script type="text/javascript"
+			src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBwkYuTlbR08tmUUqZkpAfLrZmtyTQrwnY&sensor=FALSE">
+        </script>
+        <script type="text/javascript">
+			 var myMap, myMarker;
+			 function initialize() {
+				var myLatlng = new google.maps.LatLng(-34.397, 150.644);
+				var mapOptions = {
+					center: myLatlng,
+					zoom: 6,
+					mapTypeId: google.maps.MapTypeId.ROADMAP
+				};
+				
+				myMap = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+				myMarker = new google.maps.Marker({
+					position: myLatlng,
+					map: myMap,
+					title: "User",
+					icon: "http://learn.tsinghua.edu.cn:8080/2011011236/PICs/user_position.ico"
+				});
+				
+				google.maps.event.addListener(myMap, 'click', function(event) {
+					placeMarker(event.latLng);
+				});
+			}
+			
+			function placeMarker(location) {
+				/*var myMarker = new google.maps.Marker({
+					position: location,
+					map: myMap,
+					title: "User"
+				}); */
+				myMarker.setPosition(location);
+				myMap.setCenter(location);
+			}
+        </script>
     </head>
     
     <body onload="initialize()">
@@ -32,8 +54,8 @@
         <input type="text" name="SearchWord" id="KeyID" size="60" />
         <input type="submit" value="     Go!     "/>
         </form>
-		</div>
-		
-		<div id="map_canvas" style="width:100%; height:100%"></div>
+        </div>
+        
+        <div id="map_canvas" style="width:100%; height:100%"></div>
     </body>
 </html>
