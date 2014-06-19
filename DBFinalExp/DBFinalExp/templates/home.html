@@ -11,8 +11,11 @@
         <script type="text/javascript"
 			src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBwkYuTlbR08tmUUqZkpAfLrZmtyTQrwnY&sensor=FALSE">
         </script>
+		<script src="http://code.jquery.com/jquery-1.10.1.js"></script>
         <script type="text/javascript">
+			/* Process some data of the Google Map API. */
 			 var myMap, myMarker;
+			 var myKeyWords;
 			 function initialize() {
 				var myLatlng = new google.maps.LatLng(-34.397, 150.644);
 				var mapOptions = {
@@ -26,36 +29,71 @@
 					position: myLatlng,
 					map: myMap,
 					title: "User",
-					icon: "http://learn.tsinghua.edu.cn:8080/2011011236/PICs/user_position.ico"
+					icon: "http://learn.tsinghua.edu.cn:8080/2011011236/PICs/user_position_ico.ico"
 				});
+				myKeyWords = "";
 				
 				google.maps.event.addListener(myMap, 'click', function(event) {
-					placeMarker(event.latLng);
+					changeMarker(event.latLng);
+					updateMap();
+				}); 
+				
+				$( "#user_pos" ).text( "User Position: " + myMarker.getPosition().toUrlValue() );
+				
+				/* Check the status of input. */
+				$( '#KeyID' ).on( 'input propertychange', function() {
+					myKeyWords = this.value;
+					updateMap();
 				});
 			}
 			
-			function placeMarker(location) {
-				/*var myMarker = new google.maps.Marker({
-					position: location,
-					map: myMap,
-					title: "User"
-				}); */
+			/* Change the marker of the user */
+			function changeMarker(location) {
 				myMarker.setPosition(location);
 				myMap.setCenter(location);
+				$( "#user_pos" ).text( "User Position: " + location.toUrlValue() );
 			}
+			
+			/* Update the map when the user click on the map or type new keywords */
+			function updateMap() {
+				$.post("/search/", {
+						userPos:myMarker.getPosition().toUrlValue(),
+						keyWords:myKeyWords,
+						}, function(data, status){
+						//alert(data);
+						$( "#rtnMsg" ).text( data );
+					});
+				//$( "#test_input" ).text( this.value );
+			}
+			/*function getUserPosition() {
+				return myMarker.getPosition().toUrlValue();
+			}*/
         </script>
+<!-- 		<script>
+			$( "*", document.body ).click(function( event ) {
+			event.stopPropagation();
+			var domElement = $( this ).get( 0 );
+			$( "#user_pos" ).text( "Clicked on - " + domElement.nodeName );
+			});
+		</script> -->
     </head>
     
     <body onload="initialize()">
         <div align="center">
         <img src="http://learn.tsinghua.edu.cn:8080/2011011236/PICs/Logo.png" width="175" height="180" alt="Network Error"/>
-        <img src="http://learn.tsinghua.edu.cn:8080/2011011236/PICs/name_3.png" width="400" height="92" vspace="50" alt="Network Error"/>
-        <form method="POST" action="/search">
-        <input type="text" name="SearchWord" id="KeyID" size="60" />
-        <input type="submit" value="     Go!     "/>
-        </form>
-        </div>
+        <img src="http://learn.tsinghua.edu.cn:8080/2011011236/PICs/title.png" width="450" height="92" vspace="50" alt="Network Error"/>
         
+		<div id="user_pos">&nbsp;</div>
+		<!-- <form method="POST" action="/search"> -->
+		<input type="text" id="KeyID" size="60"></input>
+        <!-- <input type="submit" value="     Go!     "/> -->
+        <!-- </form> -->
+        
+        <!-- <div id="test_input">&nbsp;</div> -->
+		<div id="rtnMsg">&nbsp;</div>
+		</div>
+		
         <div id="map_canvas" style="width:100%; height:100%"></div>
+		
     </body>
 </html>
