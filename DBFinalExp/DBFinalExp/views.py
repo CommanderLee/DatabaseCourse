@@ -7,19 +7,23 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import simplejson
 import os
 import re
+import random
 
 def home(request):
 	return render_to_response('home.html')
 
 @csrf_exempt
 def search(request):
+	
 	if 'keyWords' in request.POST:
 		keyWords = request.POST['keyWords']
 		# Get latitude and longitude from Google Latlng format.
 		latlng = re.findall(r'[-]?[\d]*\.[\d]*', request.POST['userPos'])
 		userLat = float(latlng[0])
 		userLng = float(latlng[1])
-		rtnMsg = [{"Lat":-30, "Lng":140}, {"Lat":-50, "Lng":160}, {"Lat":-70, "Lng":100}]	
+		rtnMsg = {"Pos":[{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}, 
+		{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}, 
+		{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}]}
 		#rtnMsg = "Lat:" + str(userLat) + " ; Lng:" + str(userLng) + " ; KeyWords:" + keyWords
 	else:
 		rtnMsg = "Wrong Keywords"

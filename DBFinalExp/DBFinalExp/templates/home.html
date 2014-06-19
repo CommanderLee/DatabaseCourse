@@ -15,12 +15,15 @@
         <script type="text/javascript">
 			/* Process some data of the Google Map API. */
 			 var myMap, myMarker;
+			 var MAX_K = 10;
+			 var kNearMarkers = new Array(10);
 			 var myKeyWords;
+			 
 			 function initialize() {
 				var myLatlng = new google.maps.LatLng(-34.397, 150.644);
 				var mapOptions = {
 					center: myLatlng,
-					zoom: 6,
+					zoom: 4,
 					mapTypeId: google.maps.MapTypeId.ROADMAP
 				};
 				
@@ -31,6 +34,13 @@
 					title: "User",
 					icon: "http://learn.tsinghua.edu.cn:8080/2011011236/PICs/user_position_ico.ico"
 				});
+				for (var i = 0; i < MAX_K; i++){
+					kNearMarkers[i] = new google.maps.Marker({
+						position: myLatlng,
+						map: myMap,
+						visible: false
+					});
+				}
 				myKeyWords = "";
 				
 				google.maps.event.addListener(myMap, 'click', function(event) {
@@ -57,17 +67,27 @@
 			/* Update the map when the user click on the map or type new keywords */
 			function updateMap() {
 				$.post("/search/", {
-						userPos:myMarker.getPosition().toUrlValue(),
-						keyWords:myKeyWords,
-						}, function(data, status){
-						//alert(data);
-						$( "#rtnMsg" ).text( data );
+					userPos:myMarker.getPosition().toUrlValue(),
+					keyWords:myKeyWords,
+				}, function(data, status){
+					/* Return result from django backend */
+					var dataJSON = $.parseJSON(data);
+					/* Cancel all the old k-near-markers */
+					for (var i = 0; i < MAX_K; i++){
+						kNearMarkers[i].setVisible(false);
+					}
+					/* Display the new k-near-markers*/
+					$.each(dataJSON.Pos, function(i, item){
+						if (i < MAX_K){
+							kNearMarkers[i].setPosition({lat:item.Lat, lng:item.Lng});
+							kNearMarkers[i].setVisible(true);
+						}
 					});
+							
+					$( "#rtnMsg" ).text( data );
+				});
 				//$( "#test_input" ).text( this.value );
 			}
-			/*function getUserPosition() {
-				return myMarker.getPosition().toUrlValue();
-			}*/
         </script>
 <!-- 		<script>
 			$( "*", document.body ).click(function( event ) {
