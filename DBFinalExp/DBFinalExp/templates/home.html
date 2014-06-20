@@ -72,6 +72,7 @@
 				}, function(data, status){
 					/* Return result from django backend */
 					var dataJSON = $.parseJSON(data);
+					
 					/* Cancel all the old k-near-markers */
 					for (var i = 0; i < MAX_K; i++){
 						kNearMarkers[i].setVisible(false);
@@ -79,6 +80,7 @@
 					/* Display the new k-near-markers*/
 					$.each(dataJSON.Pos, function(i, item){
 						if (i < MAX_K){
+							//alert(item.Lat + ';' + item.Lng);
 							kNearMarkers[i].setPosition({lat:item.Lat, lng:item.Lng});
 							kNearMarkers[i].setVisible(true);
 						}

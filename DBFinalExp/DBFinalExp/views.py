@@ -2,12 +2,16 @@
 
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
-#import pickle
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import simplejson
 import os
 import re
 import random
+from WordList import *
+from multiprocessing.sharedctypes import RawValue
+
+#myWordList = WordList()
+#myWordList.createIndex()
 
 def home(request):
 	return render_to_response('home.html')
@@ -21,16 +25,19 @@ def search(request):
 		latlng = re.findall(r'[-]?[\d]*\.[\d]*', request.POST['userPos'])
 		userLat = float(latlng[0])
 		userLng = float(latlng[1])
-		rtnMsg = {"Pos":[{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}, 
-		{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}, 
-		{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}]}
+		#rtnMsg = myWordList.searchPy(userLat, userLng, keyWords)
+		rtnMsg = searchPy(userLat, userLng, keyWords)
+		#rtnMsg = {"Pos":[{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}, 
+		#{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}, 
+		#{"Lat":random.randint(-50, -30), "Lng":random.randint(140, 160)}]}
 		#rtnMsg = "Lat:" + str(userLat) + " ; Lng:" + str(userLng) + " ; KeyWords:" + keyWords
 	else:
 		rtnMsg = "Wrong Keywords"
-	rtnMsgJSON = simplejson.dumps(rtnMsg, ensure_ascii=False)
-	print rtnMsgJSON
-	return HttpResponse(rtnMsgJSON)
-	#return HttpResponse(rtnMsg)
+	#rtnMsgJSON = simplejson.dumps(rtnMsg, ensure_ascii=False)
+	#print rtnMsgJSON
+	#return HttpResponse(rtnMsgJSON)
+	#print rtnMsg
+	return HttpResponse(rtnMsg)
 	# para = str(request.POST['SearchWord']).strip().lower()
 	# if para == '':
 		# return render_to_response('home.html')
