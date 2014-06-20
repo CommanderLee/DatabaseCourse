@@ -34,7 +34,7 @@ public class ComThread implements Runnable {
 			String recvData = mReader.readLine();
 			System.out.println(id + " : " + recvData);
 			
-			/** Decode the JSON and call Searcher*/
+			/** Decode the JSON */
 			JSONObject json = new JSONObject(recvData);
 			double lat, lng;
 			String keyWords;
@@ -43,9 +43,12 @@ public class ComThread implements Runnable {
 			keyWords = json.getString("keyWords");
 			System.out.println(id + " : " + lat + " ; " + lng + " ; " + keyWords);
 			
+			/** Get search result in JSON format */
+			String sendData = Searcher.doSearch(lat, lng, keyWords);
 			
+			/** Send JSON result to the front client */
 			mWriter = new PrintWriter(mSocket.getOutputStream());
-			String sendData = "{\"Pos\":[{\"Lat\":15,\"Lng\":100}]}";
+			//String sendData = "{\"Pos\":[{\"Lat\":15,\"Lng\":100}]}";
 			System.out.println(id + " : " + sendData);
 			mWriter.write(sendData);
 			mWriter.flush();

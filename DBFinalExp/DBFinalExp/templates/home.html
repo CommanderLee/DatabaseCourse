@@ -20,10 +20,10 @@
 			 var myKeyWords;
 			 
 			 function initialize() {
-				var myLatlng = new google.maps.LatLng(-34.397, 150.644);
+				var myLatlng = new google.maps.LatLng(1.315, 103.844);
 				var mapOptions = {
 					center: myLatlng,
-					zoom: 4,
+					zoom: 10,
 					mapTypeId: google.maps.MapTypeId.ROADMAP
 				};
 				
@@ -66,17 +66,21 @@
 			
 			/* Update the map when the user click on the map or type new keywords */
 			function updateMap() {
+				if (myKeyWords == "") {
+					return ;
+				}
 				$.post("/search/", {
 					userPos:myMarker.getPosition().toUrlValue(),
 					keyWords:myKeyWords,
 				}, function(data, status){
-					/* Return result from django backend */
-					var dataJSON = $.parseJSON(data);
-					
 					/* Cancel all the old k-near-markers */
 					for (var i = 0; i < MAX_K; i++){
 						kNearMarkers[i].setVisible(false);
 					}
+					
+					/* Return result from django backend */
+					var dataJSON = $.parseJSON(data);
+					
 					/* Display the new k-near-markers*/
 					$.each(dataJSON.Pos, function(i, item){
 						if (i < MAX_K){

@@ -13,6 +13,9 @@ public class SearchServer {
 	private ServerSocket	mSocket;
 	public final int		MY_PORT = 8080;
 
+	/**
+	 * Open a new thread for a successful TCP connection.
+	 */
 	public SearchServer() {
 		int id = 0;
 		try {
@@ -38,7 +41,9 @@ public class SearchServer {
 			}
 		}
 	}
+	
 	/**
+	 * Start position of the project.
 	 * @param args
 	 */
 	public static void main(String[] args) {
@@ -47,15 +52,13 @@ public class SearchServer {
 		if (Searcher.loadData(dataFileName)) 
 		{	
 			System.out.println("Load succeeded.");
-			Searcher.printData(8, 10);
+			//Searcher.printData(8, 10);;
 
-			//SearchServer mServer = new SearchServer();
+			SearchServer mServer = new SearchServer();
 		}
 		else 
 		{
 			System.out.println("Load failed.");
 		}
-		
 	}
-
 }
