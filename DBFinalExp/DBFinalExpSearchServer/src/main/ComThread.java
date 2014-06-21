@@ -49,7 +49,7 @@ public class ComThread implements Runnable {
 			/** Send JSON result to the front client */
 			mWriter = new PrintWriter(mSocket.getOutputStream());
 			//String sendData = "{\"Pos\":[{\"Lat\":15,\"Lng\":100}]}";
-			System.out.println(id + " : " + sendData);
+			//System.out.println(id + " : " + sendData);
 			mWriter.write(sendData);
 			mWriter.flush();
 			mSocket.close();   

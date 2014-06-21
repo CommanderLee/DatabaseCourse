@@ -63,27 +63,33 @@ public class Searcher {
 				entry.setLat(latlng.getDouble(0));
 				entry.setLng(latlng.getDouble(1));
 				entry.setKeys(keyStringArray);
+				entry.setName(currJSON.getString("name"));
+				entry.setPcode(currJSON.getInt("pcode"));
 				entryVector.add(entry);
 				
-				/*String prefix;
-				HashSet<String> keys = entry.getKeys();
-				for (Iterator<String> it = keys.iterator(); it.hasNext();)
+				int strLen;
+				String str, prefix;
+				for (int i = 0; i < keyStringArray.length; ++i)
 				{
-					prefix = it.next();
-					if (invertMap.containsKey(prefix))
+					str = keyStringArray[i];
+					strLen = str.length();
+					for (int j = 1; j <= strLen; ++j)
 					{
-						invertMap.get(prefix).add(currID);
+						prefix = str.substring(0, j);
+						if (invertMap.containsKey(prefix))
+						{
+							invertMap.get(prefix).add(currID);
+						}
+						else
+						{
+							Vector<Integer> vec = new Vector<Integer>();
+							vec.add(currID);
+							invertMap.put(prefix, vec);
+						}
 					}
-					else
-					{
-						Vector<Integer> vec = new Vector<Integer>();
-						vec.add(currID);
-						invertMap.put(prefix, vec);
-					}
-				}*/
+				}
 				
-				
-				String str;
+				/*String str;
 				for (int i = 0; i < keyStringArray.length; ++i)
 				{
 					str = keyStringArray[i];
@@ -98,7 +104,7 @@ public class Searcher {
 						vec.add(currID);
 						invertMap.put(str, vec);
 					}
-				}
+				}*/
 
 				++currID;
 			}
@@ -128,7 +134,7 @@ public class Searcher {
 		/** Find the shortest invert list */
 		int arrayLen = userKeyArray.length;
 		int id  = -1, minLen = -1, tmpLen;
-		for (int i = 0; i < arrayLen - 1; ++i)
+		for (int i = 0; i < arrayLen; ++i)
 		{
 			if (invertMap.containsKey(userKeyArray[i]))
 			{
@@ -175,14 +181,24 @@ public class Searcher {
 			for (int i = 0; i < vecLen; ++i)
 			{
 				boolean jud = true;
+				/*for (int j = 0; j < arrayLen; ++j)
+				{
+					if (!invertMap.get(userKeyArray[j]).contains(vec.get(i)))
+					{
+						jud = false;
+						break;
+					}
+				}*/
+				HashSet<String> strSet = entryVector.get(vec.get(i)).getKeys();
 				for (int j = 0; j < arrayLen - 1; ++j)
 				{
-					if (!entryVector.get(vec.get(i)).getKeys().contains(userKeyArray[j]))
+					if (!strSet.contains(userKeyArray[j]))
 					{
 						jud = false;
 						break;
 					}
 				}
+				
 				/** Add to candidate; maintain a k-size-heap */
 				if (jud)
 				{
@@ -194,6 +210,8 @@ public class Searcher {
 						result.setLng(entry.getLng());
 						result.setDistance(calcDistance(lat, lng, 
 								entry.getLat(), entry.getLng()));
+						result.setName(entry.getName());
+						result.setPcode(entry.getPcode());
 						resultQueue.add(result);
 						//System.out.println("Lat:" + result.getLat() + " Lng:" + result.getLng());
 					}
@@ -208,6 +226,8 @@ public class Searcher {
 							result.setLat(entry.getLat());
 							result.setLng(entry.getLng());
 							result.setDistance(dist);
+							result.setName(entry.getName());
+							result.setPcode(entry.getPcode());
 							resultQueue.add(result);
 						}
 					}
@@ -216,17 +236,20 @@ public class Searcher {
 			
 			//System.out.println("Print queue: ");
 			JSONArray array = new JSONArray();
-			HashMap<String, Double> map = new HashMap<String, Double>();
+			//HashMap<String, String> map = new HashMap<String, String>();
 			while (!resultQueue.isEmpty()) 
 			{
 				Result result = resultQueue.poll();
+				JSONObject map = new JSONObject();
 				//System.out.println("Size: " + resultQueue.size());
-				map.clear();
+				//map.clear();
 				map.put("Lat", result.getLat());
 				map.put("Lng", result.getLng());
-				array.put(map.clone());
+				map.put("Name", result.getName());
+				map.put("Pcode", result.getPcode());
+				array.put(map);
 				//System.out.println(map.get("Lat") + ", " + map.get("Lng"));
-				System.out.println(result.getLat() + ", " + result.getLng() + ", " + result.getDistance());
+				//System.out.println(result.getLat() + ", " + result.getLng() + ", " + result.getDistance());
 			}
 
 			//JSONArray array = new JSONArray(resultQueue);
@@ -278,7 +301,25 @@ public class Searcher {
 
 class Entry {
 	private double			lat, lng;
+	private String			name = "";
+	private int				pcode;
 	private HashSet<String>	keys;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public int getPcode() {
+		return pcode;
+	}
+
+	public void setPcode(int pcode) {
+		this.pcode = pcode;
+	}
 
 	public Entry() {
 		keys = new HashSet<String>();
@@ -326,9 +367,10 @@ class Entry {
 
 class Result// implements Comparable<Result>
 {
-	private double lat, lng;
-	private double distance;
-	private String name = "";
+	private double	lat, lng;
+	private double	distance;
+	private String	name = "";
+	private int		pcode;
 	public double getLat() {
 		return lat;
 	}
@@ -353,7 +395,13 @@ class Result// implements Comparable<Result>
 	public void setName(String name) {
 		this.name = name;
 	}
-/*
+	public int getPcode() {
+		return pcode;
+	}
+	public void setPcode(int pcode) {
+		this.pcode = pcode;
+	}
+	/*
 	@Override
 	public int compareTo(Result res) {
 		if (distance < res.getDistance())

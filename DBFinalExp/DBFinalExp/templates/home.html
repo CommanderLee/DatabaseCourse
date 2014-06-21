@@ -67,6 +67,9 @@
 			/* Update the map when the user click on the map or type new keywords */
 			function updateMap() {
 				if (myKeyWords == "") {
+					for (var i = 0; i < MAX_K; i++){
+						kNearMarkers[i].setVisible(false);
+					}
 					return ;
 				}
 				$.post("/search/", {
@@ -87,6 +90,7 @@
 							//alert(item.Lat + ';' + item.Lng);
 							kNearMarkers[i].setPosition({lat:item.Lat, lng:item.Lng});
 							kNearMarkers[i].setVisible(true);
+							kNearMarkers[i].setTitle(item.Name + "\nPCode: " + item.Pcode);
 						}
 					});
 							
