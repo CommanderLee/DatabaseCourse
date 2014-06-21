@@ -32,7 +32,7 @@ public class ComThread implements Runnable {
 			/** Receive data from django-python */
 			mReader = new BufferedReader(new InputStreamReader(mSocket.getInputStream()));      
 			String recvData = mReader.readLine();
-			System.out.println(id + " : " + recvData);
+			//System.out.println(id + " : " + recvData);
 			
 			/** Decode the JSON */
 			JSONObject json = new JSONObject(recvData);

@@ -62,7 +62,8 @@ public class Searcher {
 				/** Configure the Entry */
 				entry.setLat(latlng.getDouble(0));
 				entry.setLng(latlng.getDouble(1));
-				entry.setKeys(keyStringArray);
+				//entry.setKeys(keyStringArray);
+				entry.setTree(keyStringArray);
 				entry.setName(currJSON.getString("name"));
 				entry.setPcode(currJSON.getInt("pcode"));
 				entryVector.add(entry);
@@ -129,7 +130,7 @@ public class Searcher {
 	{
 		/** Filter long blanks */
 		String [] userKeyArray = keyWords.replaceAll(",", " ").toLowerCase().split(" +");
-		System.out.println("First word: " + userKeyArray[0]);
+		//System.out.println("First word: " + userKeyArray[0]);
 		
 		/** Find the shortest invert list */
 		int arrayLen = userKeyArray.length;
@@ -149,6 +150,10 @@ public class Searcher {
 					id = i;
 					minLen = tmpLen;
 				}
+			}
+			else
+			{
+				id = -1;
 			}
 		}
 		
@@ -189,10 +194,12 @@ public class Searcher {
 						break;
 					}
 				}*/
-				HashSet<String> strSet = entryVector.get(vec.get(i)).getKeys();
+				//HashSet<String> strSet = entryVector.get(vec.get(i)).getKeys();
+				TrieTree tree = entryVector.get(vec.get(i)).getTree();
 				for (int j = 0; j < arrayLen - 1; ++j)
 				{
-					if (!strSet.contains(userKeyArray[j]))
+					//if (!strSet.contains(userKeyArray[j]))
+					if (!tree.containString(userKeyArray[j]))
 					{
 						jud = false;
 						break;
@@ -276,7 +283,7 @@ public class Searcher {
 			for (int i = st; i < ed; ++i) 
 			{
 				System.out.println(entryVector.get(i).getLat() + " , " + entryVector.get(i).getLng());
-				System.out.println(entryVector.get(i).getKeys().toString());
+				//System.out.println(entryVector.get(i).getKeys().toString());
 			}
 		}
 		
@@ -303,7 +310,8 @@ class Entry {
 	private double			lat, lng;
 	private String			name = "";
 	private int				pcode;
-	private HashSet<String>	keys;
+	//private HashSet<String>	keys;
+	private TrieTree		tree;
 
 	public String getName() {
 		return name;
@@ -322,7 +330,9 @@ class Entry {
 	}
 
 	public Entry() {
-		keys = new HashSet<String>();
+		//keys = new HashSet<String>();
+		tree = new TrieTree();
+		//tree.node = "";
 	}
 
 	public double getLat() {
@@ -341,7 +351,20 @@ class Entry {
 		this.lng = lng;
 	}
 
-	public HashSet<String> getKeys() {
+	public TrieTree getTree() {
+		return tree;
+	}
+
+	public void setTree(String [] keyStringArray) {
+		String str;
+		for (int i = 0; i < keyStringArray.length; ++i)
+		{
+			str = keyStringArray[i];
+			this.tree.addString(str);
+		}
+	}
+
+/*	public HashSet<String> getKeys() {
 		return keys;
 	}
 
@@ -352,17 +375,17 @@ class Entry {
 		{
 			str = keyStringArray[i];
 			this.keys.add(str);
-			/*strLen = str.length();
+			strLen = str.length();
 			for (int j = 1; j <= strLen; ++j)
 			{
 				prefix = str.substring(0, j);
 				this.keys.add(prefix);
-			}*/
+			}
 		}
-		/*for (int i = 0; i < keyStringArray.length; ++i) {
+		for (int i = 0; i < keyStringArray.length; ++i) {
 			this.keys.add(keyStringArray[i]);
-		}*/
-	}
+		}
+	}*/
 }
 
 class Result// implements Comparable<Result>
