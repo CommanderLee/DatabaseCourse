@@ -26,7 +26,7 @@ public class Searcher {
 	private static boolean 							isLoad;
 	private static Vector<Entry> 					entryVector = new Vector<Entry>();
 	private static HashMap<String, Vector<Integer>>	invertMap = new HashMap<String, Vector<Integer>>();
-	
+	private static TrieTree							tree = new TrieTree();
 	/**
 	 * Load the data from the disk, and do pre-process.
 	 * @param fileName
@@ -53,19 +53,21 @@ public class Searcher {
 				currJSON = new JSONObject(currLine);
 				Entry entry = new Entry();
 				JSONArray latlng = currJSON.getJSONArray("latlng");
-				String keyString = currJSON.getString("addr").replaceAll("\\n", " ")
-						.replaceAll(",", " ").toLowerCase();
+				String address = currJSON.getString("addr").replaceAll("\\n", ",");
 				//System.out.println(keyString);
 				//new java.util.Scanner(System.in).nextLine();
-				String [] keyStringArray = keyString.split(" +");
+				String [] keyStringArray = address.replaceAll(",", " ")
+						.toLowerCase().split(" +");
 				
 				/** Configure the Entry */
 				entry.setLat(latlng.getDouble(0));
 				entry.setLng(latlng.getDouble(1));
-				//entry.setKeys(keyStringArray);
-				entry.setTree(keyStringArray);
+				entry.setKeySet(keyStringArray);
+				//entry.setTree(keyStringArray);
 				entry.setName(currJSON.getString("name"));
 				entry.setPcode(currJSON.getInt("pcode"));
+				entry.setAddress(address);
+				entry.setUrl(currJSON.getString("url"));
 				entryVector.add(entry);
 				
 				int strLen;
@@ -88,7 +90,9 @@ public class Searcher {
 							invertMap.put(prefix, vec);
 						}
 					}
+					tree.addString(str, currID);
 				}
+				++currID;
 				
 				/*String str;
 				for (int i = 0; i < keyStringArray.length; ++i)
@@ -106,9 +110,8 @@ public class Searcher {
 						invertMap.put(str, vec);
 					}
 				}*/
-
-				++currID;
 			}
+			//System.out.println(invertMap.get("sing").size());
 			isLoad = true;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -165,11 +168,11 @@ public class Searcher {
 			Comparator<Result> cmp = new Comparator<Result>() {
 				@Override
 				public int compare(Result arg0, Result arg1) {
-					if (arg0.getDistance() > arg1.getDistance())
+					if (arg0.getDistance() < arg1.getDistance())
 					{
 						return 1;
 					}
-					else if(arg0.getDistance() < arg1.getDistance())
+					else if(arg0.getDistance() > arg1.getDistance())
 					{
 						return -1;
 					}
@@ -186,6 +189,7 @@ public class Searcher {
 			for (int i = 0; i < vecLen; ++i)
 			{
 				boolean jud = true;
+				int curr = vec.get(i);
 				/*for (int j = 0; j < arrayLen; ++j)
 				{
 					if (!invertMap.get(userKeyArray[j]).contains(vec.get(i)))
@@ -194,22 +198,37 @@ public class Searcher {
 						break;
 					}
 				}*/
-				//HashSet<String> strSet = entryVector.get(vec.get(i)).getKeys();
-				TrieTree tree = entryVector.get(vec.get(i)).getTree();
+				HashSet<String> strSet = entryVector.get(curr).getKeySet();
+				//TrieTree tree = entryVector.get(vec.get(i)).getTree();
+				//System.out.println("i:" + vec.get(i));
 				for (int j = 0; j < arrayLen - 1; ++j)
 				{
-					//if (!strSet.contains(userKeyArray[j]))
-					if (!tree.containString(userKeyArray[j]))
+					if (!strSet.contains(userKeyArray[j]))
+					//if (!tree.containString(userKeyArray[j]))
 					{
 						jud = false;
 						break;
 					}
+					//System.out.println("Contains:" + userKeyArray[j]);
+				}
+				HashSet<Integer> idSet = tree.findString(userKeyArray[arrayLen-1]);
+				if (idSet != null && !idSet.contains(curr))
+				{
+					jud = false;
 				}
 				
 				/** Add to candidate; maintain a k-size-heap */
 				if (jud)
 				{
 					Entry entry = entryVector.get(vec.get(i));
+					double dist = calcDistance(lat, lng, 
+							entry.getLat(), entry.getLng());
+					
+					if (resultQueue.size() >= MAX_K && dist < resultQueue.peek().getDistance())
+					{
+						resultQueue.poll();
+					}
+					
 					if (resultQueue.size() < MAX_K)
 					{
 						Result result = new Result();
@@ -219,32 +238,22 @@ public class Searcher {
 								entry.getLat(), entry.getLng()));
 						result.setName(entry.getName());
 						result.setPcode(entry.getPcode());
+						result.setAddress(entry.getAddress());
+						result.setUrl(entry.getUrl());
 						resultQueue.add(result);
 						//System.out.println("Lat:" + result.getLat() + " Lng:" + result.getLng());
-					}
-					else
-					{
-						double dist = calcDistance(lat, lng, 
-								entry.getLat(), entry.getLng());
-						if (dist < resultQueue.peek().getDistance())
-						{
-							resultQueue.poll();
-							Result result = new Result();
-							result.setLat(entry.getLat());
-							result.setLng(entry.getLng());
-							result.setDistance(dist);
-							result.setName(entry.getName());
-							result.setPcode(entry.getPcode());
-							resultQueue.add(result);
-						}
+						//System.out.println("Add: dist:" + result.getDistance() + 
+						//		"peek:" + resultQueue.peek().getDistance());
 					}
 				}
 			}
 			
 			//System.out.println("Print queue: ");
+			JSONObject TotalObj = new JSONObject();
 			JSONArray array = new JSONArray();
 			//HashMap<String, String> map = new HashMap<String, String>();
-			while (!resultQueue.isEmpty()) 
+			//while (!resultQueue.isEmpty()) 
+			while (resultQueue.size() > 1)
 			{
 				Result result = resultQueue.poll();
 				JSONObject map = new JSONObject();
@@ -254,15 +263,29 @@ public class Searcher {
 				map.put("Lng", result.getLng());
 				map.put("Name", result.getName());
 				map.put("Pcode", result.getPcode());
+				map.put("Addr", result.getAddress());
 				array.put(map);
 				//System.out.println(map.get("Lat") + ", " + map.get("Lng"));
 				//System.out.println(result.getLat() + ", " + result.getLng() + ", " + result.getDistance());
 			}
-
+			if (resultQueue.size() == 1)
+			{
+				Result result = resultQueue.poll();
+				JSONObject map = new JSONObject();
+				map.put("Lat", result.getLat());
+				map.put("Lng", result.getLng());
+				map.put("Name", result.getName());
+				map.put("Pcode", result.getPcode());
+				map.put("Addr", result.getAddress());
+				array.put(map);
+				
+				TotalObj.put("BestMap", result.getUrl());
+			}
+			
 			//JSONArray array = new JSONArray(resultQueue);
-			JSONObject obj = new JSONObject();
-			obj.put("Pos", array);
-			resultJSON = obj.toString();
+			
+			TotalObj.put("Pos", array);
+			resultJSON = TotalObj.toString();
 			//System.out.println(resultJSON);
 		}
 		//System.out.println(userKeyArray.length);
@@ -292,7 +315,7 @@ public class Searcher {
 	
 	public static double calcDistance(double lat1, double lng1, double lat2, double lng2)
 	{
-		double EARTH_R = 6378.137, C, D;
+		/*double EARTH_R = 6378.137, C, D;
 		
 		lat1 = (90 - lat1) * Math.PI / 180.0;
 		lat2 = (90 - lat2) * Math.PI / 180.0;
@@ -301,39 +324,38 @@ public class Searcher {
 		C = Math.sin(lat1) * Math.sin(lat2) * Math.cos(lng1 - lng2) 
 				+ Math.cos(lat1) * Math.cos(lat2);
 		D = EARTH_R * Math.acos(C);// * Math.PI / 180.0;
-		return D;
-		//return Math.abs(lat1 - lat2) + Math.abs(lng1 - lng2);
+		return D;*/
+		return Math.abs(lat1 - lat2) + Math.abs(lng1 - lng2);
 	}
 }
 
 class Entry {
-	private double			lat, lng;
-	private String			name = "";
-	private int				pcode;
-	//private HashSet<String>	keys;
-	private TrieTree		tree;
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public int getPcode() {
-		return pcode;
-	}
-
-	public void setPcode(int pcode) {
-		this.pcode = pcode;
-	}
+	private double				lat, lng;
+	private String				name = "";
+	private int					pcode;
+	private String				url = "";
+	private String				address = "";
+	//private TrieTree	tree;
+	private HashSet<String>		keySet;
 
 	public Entry() {
-		//keys = new HashSet<String>();
-		tree = new TrieTree();
+		keySet = new HashSet<String>();
+		//tree = new TrieTree();
 		//tree.node = "";
 	}
+
+/*	public TrieTree getTree() {
+		return tree;
+	}
+
+	public void setTree(String [] keyStringArray) {
+		String str;
+		for (int i = 0; i < keyStringArray.length; ++i)
+		{
+			str = keyStringArray[i];
+			this.tree.addString(str);
+		}
+	}*/
 
 	public double getLat() {
 		return lat;
@@ -351,17 +373,49 @@ class Entry {
 		this.lng = lng;
 	}
 
-	public TrieTree getTree() {
-		return tree;
+	public String getName() {
+		return name;
 	}
 
-	public void setTree(String [] keyStringArray) {
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public int getPcode() {
+		return pcode;
+	}
+
+	public void setPcode(int pcode) {
+		this.pcode = pcode;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public HashSet<String> getKeySet() {
+		return keySet;
+	}
+
+	public void setKeySet(String [] keyStringArray) {
 		String str;
 		for (int i = 0; i < keyStringArray.length; ++i)
 		{
 			str = keyStringArray[i];
-			this.tree.addString(str);
+			this.keySet.add(str);
 		}
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
 	}
 
 /*	public HashSet<String> getKeys() {
@@ -394,6 +448,8 @@ class Result// implements Comparable<Result>
 	private double	distance;
 	private String	name = "";
 	private int		pcode;
+	private String	address;
+	private String	url;
 	public double getLat() {
 		return lat;
 	}
@@ -438,4 +494,16 @@ class Result// implements Comparable<Result>
 		return 0;
 	}
 	*/
+	public String getAddress() {
+		return address;
+	}
+	public void setAddress(String address) {
+		this.address = address;
+	}
+	public String getUrl() {
+		return url;
+	}
+	public void setUrl(String url) {
+		this.url = url;
+	}
 }

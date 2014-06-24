@@ -1,7 +1,7 @@
 package main;
 
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 
 /**
  * A simple trie-tree used to find exist prefix.
@@ -18,7 +18,7 @@ public class TrieTree {
 		//children = new HashMap<String, TrieTree>();
 	}
 	
-	public void addString(String str)
+	public void addString(String str, int id)
 	{
 		int strLen = str.length();
 		TrieNode tmp = node;
@@ -31,6 +31,7 @@ public class TrieTree {
 				tmp.children.put(first, child);
 			}
 			tmp = tmp.children.get(first);
+			tmp.idSet.add(id);
 		}
 /*		if (str.length() > 0)
 		{
@@ -81,7 +82,28 @@ public class TrieTree {
 		//}
 	}
 	
-	public boolean containString(String str)
+	public HashSet<Integer> findString(String str)
+	{
+		HashSet<Integer> ret = null;
+		int strLen = str.length(), st;
+		TrieNode tmp = node;
+		for (st = 0; st < strLen; ++st)
+		{
+			String first = str.substring(st, st+1);
+			if (!tmp.children.containsKey(first))
+			{
+				ret = null;
+				break;
+			}
+			tmp = tmp.children.get(first);
+		}
+		if (st == strLen)
+		{
+			ret = tmp.idSet;
+		}
+		return ret;
+	}
+/*	public boolean containString(String str)
 	{
 		boolean ret = true;
 		int strLen = str.length();
@@ -100,7 +122,7 @@ public class TrieTree {
 		//{
 			//int num = children.size();
 			//TODO:
-/*			boolean jud = false;
+			boolean jud = false;
 			Iterator<TrieTree> it = children.iterator();
 			while(it.hasNext())
 			//for (int i = 0; i < num; ++i)
@@ -117,20 +139,22 @@ public class TrieTree {
 			if (!jud)
 			{
 				ret = false;
-			}*/
+			}
 		//}
 		return ret;
-	}
+	}*/
 }
 
 class TrieNode
 {
 	//public String 				nodeStr;
 	HashMap<String, TrieNode>	children;
+	HashSet<Integer>			idSet;
 	
 	public TrieNode()
 	{
 		//nodeStr = "";
 		children = new HashMap<String, TrieNode>();	
+		idSet = new HashSet<Integer>();
 	}
 }
